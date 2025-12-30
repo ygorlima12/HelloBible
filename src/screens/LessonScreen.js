@@ -6,6 +6,7 @@ import {
   Dimensions,
   Modal,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -118,34 +119,40 @@ const LessonScreen = ({ route, navigation }) => {
       exiting={SlideOutLeft.duration(300)}
       style={styles.card}
     >
-      {card.icon && (
-        <View style={styles.cardIconContainer}>
-          <Icon name={card.icon} size={48} color={moduleColor.from} />
-        </View>
-      )}
+      <ScrollView
+        style={styles.cardScrollView}
+        contentContainerStyle={styles.cardScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {card.icon && (
+          <View style={styles.cardIconContainer}>
+            <Icon name={card.icon} size={48} color={moduleColor.from} />
+          </View>
+        )}
 
-      <Text style={styles.cardTitle}>{card.title}</Text>
+        <Text style={styles.cardTitle}>{card.title}</Text>
 
-      <Text style={styles.cardContent}>{card.content}</Text>
+        <Text style={styles.cardContent}>{card.content}</Text>
 
-      {card.verse && (
-        <View style={styles.verseContainer}>
-          <Icon name="format-quote-close" size={24} color={moduleColor.from} />
-          <Text style={styles.verseText}>{card.verse}</Text>
-          <Text style={styles.verseReference}>{card.verseReference}</Text>
-        </View>
-      )}
+        {card.verse && (
+          <View style={styles.verseContainer}>
+            <Icon name="format-quote-close" size={24} color={moduleColor.from} />
+            <Text style={styles.verseText}>{card.verse}</Text>
+            <Text style={styles.verseReference}>{card.verseReference}</Text>
+          </View>
+        )}
 
-      {card.keyPoints && (
-        <View style={styles.keyPointsContainer}>
-          {card.keyPoints.map((point, index) => (
-            <View key={index} style={styles.keyPoint}>
-              <View style={[styles.bullet, { backgroundColor: moduleColor.from }]} />
-              <Text style={styles.keyPointText}>{point}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+        {card.keyPoints && (
+          <View style={styles.keyPointsContainer}>
+            {card.keyPoints.map((point, index) => (
+              <View key={index} style={styles.keyPoint}>
+                <View style={[styles.bullet, { backgroundColor: moduleColor.from }]} />
+                <Text style={styles.keyPointText}>{point}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </Animated.View>
   );
 
@@ -155,74 +162,80 @@ const LessonScreen = ({ route, navigation }) => {
       entering={SlideInRight.duration(300)}
       style={styles.card}
     >
-      <View style={styles.quizHeader}>
-        <Icon name="help-circle" size={40} color={moduleColor.from} />
-        <Text style={styles.quizTitle}>Quiz de Verificação</Text>
-        <Text style={styles.quizSubtitle}>Teste seu conhecimento!</Text>
-      </View>
-
-      {card.questions.map((question, qIndex) => (
-        <View key={qIndex} style={styles.questionContainer}>
-          <Text style={styles.questionText}>
-            {qIndex + 1}. {question.question}
-          </Text>
-
-          {question.options.map((option, oIndex) => {
-            const isSelected = selectedAnswers[qIndex] === oIndex;
-            const isCorrect = oIndex === question.correctAnswer;
-            const showCorrect = showResults && isCorrect;
-            const showWrong = showResults && isSelected && !isCorrect;
-
-            return (
-              <TouchableOpacity
-                key={oIndex}
-                style={[
-                  styles.optionButton,
-                  isSelected && !showResults && styles.optionSelected,
-                  showCorrect && styles.optionCorrect,
-                  showWrong && styles.optionWrong,
-                ]}
-                onPress={() => !showResults && handleAnswer(qIndex, oIndex)}
-                disabled={showResults}
-              >
-                <View style={styles.optionContent}>
-                  <View style={[
-                    styles.optionRadio,
-                    isSelected && !showResults && styles.optionRadioSelected,
-                    showCorrect && styles.optionRadioCorrect,
-                    showWrong && styles.optionRadioWrong,
-                  ]}>
-                    {showCorrect && <Icon name="check" size={16} color={colors.white} />}
-                    {showWrong && <Icon name="close" size={16} color={colors.white} />}
-                  </View>
-                  <Text style={[
-                    styles.optionText,
-                    showCorrect && styles.optionTextCorrect,
-                    showWrong && styles.optionTextWrong,
-                  ]}>
-                    {option}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+      <ScrollView
+        style={styles.cardScrollView}
+        contentContainerStyle={styles.cardScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.quizHeader}>
+          <Icon name="help-circle" size={40} color={moduleColor.from} />
+          <Text style={styles.quizTitle}>Quiz de Verificação</Text>
+          <Text style={styles.quizSubtitle}>Teste seu conhecimento!</Text>
         </View>
-      ))}
 
-      {showResults && (
-        <Animated.View entering={ZoomIn.duration(500)} style={styles.scoreContainer}>
-          <LinearGradient
-            colors={quizScore >= 70 ? colors.gradients.success : colors.gradients.warning}
-            style={styles.scoreCard}
-          >
-            <Text style={styles.scoreTitle}>Sua Pontuação</Text>
-            <Text style={styles.scoreValue}>{quizScore}%</Text>
-            <Text style={styles.scoreMessage}>
-              {quizScore === 100 ? '🎉 Perfeito!' : quizScore >= 70 ? '👏 Muito bem!' : '💪 Continue praticando!'}
+        {card.questions.map((question, qIndex) => (
+          <View key={qIndex} style={styles.questionContainer}>
+            <Text style={styles.questionText}>
+              {qIndex + 1}. {question.question}
             </Text>
-          </LinearGradient>
-        </Animated.View>
-      )}
+
+            {question.options.map((option, oIndex) => {
+              const isSelected = selectedAnswers[qIndex] === oIndex;
+              const isCorrect = oIndex === question.correctAnswer;
+              const showCorrect = showResults && isCorrect;
+              const showWrong = showResults && isSelected && !isCorrect;
+
+              return (
+                <TouchableOpacity
+                  key={oIndex}
+                  style={[
+                    styles.optionButton,
+                    isSelected && !showResults && styles.optionSelected,
+                    showCorrect && styles.optionCorrect,
+                    showWrong && styles.optionWrong,
+                  ]}
+                  onPress={() => !showResults && handleAnswer(qIndex, oIndex)}
+                  disabled={showResults}
+                >
+                  <View style={styles.optionContent}>
+                    <View style={[
+                      styles.optionRadio,
+                      isSelected && !showResults && styles.optionRadioSelected,
+                      showCorrect && styles.optionRadioCorrect,
+                      showWrong && styles.optionRadioWrong,
+                    ]}>
+                      {showCorrect && <Icon name="check" size={16} color={colors.white} />}
+                      {showWrong && <Icon name="close" size={16} color={colors.white} />}
+                    </View>
+                    <Text style={[
+                      styles.optionText,
+                      showCorrect && styles.optionTextCorrect,
+                      showWrong && styles.optionTextWrong,
+                    ]}>
+                      {option}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+
+        {showResults && (
+          <Animated.View entering={ZoomIn.duration(500)} style={styles.scoreContainer}>
+            <LinearGradient
+              colors={quizScore >= 70 ? colors.gradients.success : colors.gradients.warning}
+              style={styles.scoreCard}
+            >
+              <Text style={styles.scoreTitle}>Sua Pontuação</Text>
+              <Text style={styles.scoreValue}>{quizScore}%</Text>
+              <Text style={styles.scoreMessage}>
+                {quizScore === 100 ? '🎉 Perfeito!' : quizScore >= 70 ? '👏 Muito bem!' : '💪 Continue praticando!'}
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+        )}
+      </ScrollView>
     </Animated.View>
   );
 
@@ -412,6 +425,12 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
+  },
+  cardScrollView: {
+    flex: 1,
+  },
+  cardScrollContent: {
+    flexGrow: 1,
   },
   cardIconContainer: {
     alignSelf: 'center',
