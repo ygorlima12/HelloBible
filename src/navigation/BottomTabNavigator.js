@@ -5,7 +5,7 @@ import { colors } from '../theme/colors';
 
 import NewHomeScreen from '../screens/NewHomeScreen';
 import ModulesScreen from '../screens/ModulesScreen';
-import SermonScreen from '../screens/SermonScreen';
+import StudyToolsScreen from '../screens/StudyToolsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AIChatFloating from '../components/AIChatFloating';
 
@@ -23,8 +23,8 @@ const BottomTabNavigator = () => {
               iconName = 'book-open-variant';
             } else if (route.name === 'Módulos') {
               iconName = 'school';
-            } else if (route.name === 'Sermão') {
-              iconName = 'microphone';
+            } else if (route.name === 'Ferramentas') {
+              iconName = 'tools';
             } else if (route.name === 'Perfil') {
               iconName = 'account-circle';
             }
@@ -71,10 +71,10 @@ const BottomTabNavigator = () => {
           }}
         />
         <Tab.Screen
-          name="Sermão"
-          component={SermonScreen}
+          name="Ferramentas"
+          component={StudyToolsScreen}
           options={{
-            tabBarLabel: 'Sermão',
+            tabBarLabel: 'Ferramentas',
           }}
         />
         <Tab.Screen
