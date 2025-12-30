@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,17 +9,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Text, FAB } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
+import OpenAIService from '../services/OpenAIService';
+import ApiKeyConfig from './ApiKeyConfig';
 
 const { height } = Dimensions.get('window');
 
 const AIChatFloating = () => {
   const [visible, setVisible] = useState(false);
+  const [configVisible, setConfigVisible] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -28,6 +33,9 @@ const AIChatFloating = () => {
     },
   ]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const scrollViewRef = useRef(null);
 
   const quickSuggestions = [
     'Explique Hebreus 11:1',
@@ -36,32 +44,130 @@ const AIChatFloating = () => {
     'Significado de salvação',
   ];
 
-  const handleSend = () => {
-    if (inputText.trim()) {
-      // Adicionar mensagem do usuário
-      const newMessage = {
-        id: messages.length + 1,
-        text: inputText,
-        isAI: false,
-      };
-      setMessages([...messages, newMessage]);
+  useEffect(() => {
+    checkApiKey();
+  }, []);
 
-      // Simular resposta da IA
-      setTimeout(() => {
-        const aiResponse = {
-          id: messages.length + 2,
-          text: 'Entendo sua pergunta. Deixe-me ajudá-lo com isso...',
+  useEffect(() => {
+    if (visible) {
+      checkApiKey();
+    }
+  }, [visible]);
+
+  const checkApiKey = async () => {
+    const keyExists = await OpenAIService.hasApiKey();
+    setHasApiKey(keyExists);
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+
+    if (!hasApiKey) {
+      Alert.alert(
+        'Configuração Necessária',
+        'Você precisa configurar sua chave da API OpenAI para usar o chat.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Configurar', onPress: () => setConfigVisible(true) },
+        ]
+      );
+      return;
+    }
+
+    // Adicionar mensagem do usuário
+    const userMessage = {
+      id: Date.now(),
+      text: inputText.trim(),
+      isAI: false,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setLoading(true);
+
+    // Scroll para o final
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+      // Preparar histórico da conversa para a API
+      const conversationHistory = messages
+        .filter(msg => msg.id !== 1) // Remove mensagem inicial
+        .map(msg => ({
+          role: msg.isAI ? 'assistant' : 'user',
+          content: msg.text,
+        }));
+
+      // Enviar para OpenAI
+      const response = await OpenAIService.askBiblicalQuestion(
+        inputText.trim(),
+        conversationHistory
+      );
+
+      if (response.success) {
+        const aiMessage = {
+          id: Date.now() + 1,
+          text: response.message,
           isAI: true,
         };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Mostrar erro
+        Alert.alert('Erro', response.error);
 
-      setInputText('');
+        // Adicionar mensagem de erro
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: `Desculpe, ocorreu um erro: ${response.error}`,
+          isAI: true,
+          isError: true,
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível enviar a mensagem.');
+    } finally {
+      setLoading(false);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
   const handleSuggestion = (suggestion) => {
     setInputText(suggestion);
+  };
+
+  const handleOpenConfig = () => {
+    setConfigVisible(true);
+  };
+
+  const handleConfigured = () => {
+    checkApiKey();
+  };
+
+  const clearChat = () => {
+    Alert.alert(
+      'Limpar Conversa',
+      'Deseja limpar todo o histórico de conversas?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Limpar',
+          style: 'destructive',
+          onPress: () => {
+            setMessages([
+              {
+                id: 1,
+                text: 'Olá! Sou seu assistente teológico com IA. Como posso ajudá-lo hoje?',
+                isAI: true,
+              },
+            ]);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -100,26 +206,63 @@ const AIChatFloating = () => {
                     <Text style={styles.headerTitle}>Assistente Teológico IA</Text>
                     <View style={styles.onlineIndicator}>
                       <View style={styles.onlineDot} />
-                      <Text style={styles.onlineText}>Online</Text>
+                      <Text style={styles.onlineText}>
+                        {hasApiKey ? 'Online' : 'Configuração necessária'}
+                      </Text>
                     </View>
                   </View>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => setVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Icon name="close" size={24} color={colors.white} />
-                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                  <TouchableOpacity
+                    onPress={handleOpenConfig}
+                    style={styles.configButton}
+                  >
+                    <Icon name="cog" size={20} color={colors.white} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={clearChat}
+                    style={styles.configButton}
+                  >
+                    <Icon name="broom" size={20} color={colors.white} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setVisible(false)}
+                    style={styles.closeButton}
+                  >
+                    <Icon name="close" size={24} color={colors.white} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </LinearGradient>
 
             {/* Messages Area */}
             <ScrollView
+              ref={scrollViewRef}
               style={styles.messagesContainer}
               contentContainerStyle={styles.messagesContent}
               showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
             >
+              {!hasApiKey && (
+                <View style={styles.warningCard}>
+                  <Icon name="alert-circle" size={24} color={colors.warning} />
+                  <View style={styles.warningContent}>
+                    <Text style={styles.warningTitle}>Configure sua API Key</Text>
+                    <Text style={styles.warningText}>
+                      Para usar o chat com IA, configure sua chave da OpenAI.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={handleOpenConfig}
+                      style={styles.configLinkButton}
+                    >
+                      <Text style={styles.configLinkText}>Configurar agora</Text>
+                      <Icon name="arrow-right" size={16} color={colors.primary[600]} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
               {messages.map((message, index) => (
                 <Animated.View
                   key={message.id}
@@ -130,7 +273,10 @@ const AIChatFloating = () => {
                   ]}
                 >
                   {message.isAI ? (
-                    <View style={styles.messageAI}>
+                    <View style={[
+                      styles.messageAI,
+                      message.isError && styles.messageError
+                    ]}>
                       <Text style={styles.messageTextAI}>{message.text}</Text>
                     </View>
                   ) : (
@@ -143,6 +289,15 @@ const AIChatFloating = () => {
                   )}
                 </Animated.View>
               ))}
+
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <View style={styles.loadingBubble}>
+                    <ActivityIndicator size="small" color={colors.primary[600]} />
+                    <Text style={styles.loadingText}>Pensando...</Text>
+                  </View>
+                </View>
+              )}
             </ScrollView>
 
             {/* Quick Suggestions */}
@@ -180,21 +335,26 @@ const AIChatFloating = () => {
                   onChangeText={setInputText}
                   multiline
                   maxLength={500}
+                  editable={!loading}
                 />
 
                 <TouchableOpacity
                   onPress={handleSend}
-                  disabled={!inputText.trim()}
+                  disabled={!inputText.trim() || loading}
                 >
                   <LinearGradient
-                    colors={inputText.trim() ? colors.gradients.primary : [colors.slate[300], colors.slate[400]]}
+                    colors={inputText.trim() && !loading ? colors.gradients.primary : [colors.slate[300], colors.slate[400]]}
                     style={styles.sendButton}
                   >
-                    <Icon
-                      name="send"
-                      size={20}
-                      color={colors.white}
-                    />
+                    {loading ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <Icon
+                        name="send"
+                        size={20}
+                        color={colors.white}
+                      />
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -202,6 +362,13 @@ const AIChatFloating = () => {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* API Key Configuration Modal */}
+      <ApiKeyConfig
+        visible={configVisible}
+        onClose={() => setConfigVisible(false)}
+        onConfigured={handleConfigured}
+      />
     </>
   );
 };
@@ -263,6 +430,19 @@ const styles = StyleSheet.create({
     color: colors.white,
     opacity: 0.9,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  configButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   closeButton: {
     width: 40,
     height: 40,
@@ -270,6 +450,41 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  warningCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.warning + '10',
+    borderColor: colors.warning + '30',
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+    marginBottom: 12,
+  },
+  warningContent: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.slate[900],
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 13,
+    color: colors.slate[700],
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  configLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  configLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary[600],
   },
   messagesContainer: {
     flex: 1,
@@ -295,10 +510,33 @@ const styles = StyleSheet.create({
     padding: 12,
     maxWidth: '80%',
   },
+  messageError: {
+    backgroundColor: colors.error + '10',
+    borderColor: colors.error + '30',
+    borderWidth: 1,
+  },
   messageTextAI: {
     fontSize: 14,
     color: colors.slate[900],
     lineHeight: 20,
+  },
+  loadingContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  loadingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.slate[100],
+    borderRadius: 16,
+    borderTopLeftRadius: 4,
+    padding: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: colors.slate[600],
+    fontStyle: 'italic',
   },
   messageUser: {
     borderRadius: 16,
