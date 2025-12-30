@@ -11,7 +11,7 @@ import AIChatFloating from '../components/AIChatFloating';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabNavigator = () => {
+const BottomTabNavigator = ({ onLogout }) => {
   return (
     <>
       <Tab.Navigator
@@ -79,11 +79,12 @@ const BottomTabNavigator = () => {
         />
         <Tab.Screen
           name="Perfil"
-          component={ProfileScreen}
           options={{
             tabBarLabel: 'Perfil',
           }}
-        />
+        >
+          {props => <ProfileScreen {...props} onLogout={onLogout} />}
+        </Tab.Screen>
       </Tab.Navigator>
 
       {/* Chat Flutuante */}
