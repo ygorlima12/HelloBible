@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
-import { Text, Surface, ProgressBar } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, ProgressBar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -10,13 +10,18 @@ import ModulesService from '../services/ModulesService';
 const ModuleDetailScreen = ({ route, navigation }) => {
   const { moduleId } = route.params;
   const [module, setModule] = useState(null);
-  const [selectedLesson, setSelectedLesson] = useState(null);
-  const [lessonModalVisible, setLessonModalVisible] = useState(false);
   const [completedLessons, setCompletedLessons] = useState({});
 
   useEffect(() => {
     loadModule();
   }, [moduleId]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadModule();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadModule = async () => {
     const data = await ModulesService.getModuleById(moduleId);
@@ -31,16 +36,11 @@ const ModuleDetailScreen = ({ route, navigation }) => {
   };
 
   const handleLessonPress = (lesson) => {
-    setSelectedLesson(lesson);
-    setLessonModalVisible(true);
-  };
-
-  const handleCompleteLesson = async () => {
-    if (selectedLesson) {
-      await ModulesService.completeLesson(moduleId, selectedLesson.id);
-      setCompletedLessons({ ...completedLessons, [selectedLesson.id]: true });
-      loadModule(); // Recarregar para atualizar progresso
-    }
+    navigation.navigate('Lesson', {
+      moduleId: moduleId,
+      lessonId: lesson.id,
+      moduleColor: module.color,
+    });
   };
 
   if (!module) {
@@ -137,58 +137,6 @@ const ModuleDetailScreen = ({ route, navigation }) => {
           </Animated.View>
         ))}
       </ScrollView>
-
-      {/* Lesson Modal */}
-      <Modal
-        visible={lessonModalVisible}
-        animationType="slide"
-        onRequestClose={() => setLessonModalVisible(false)}
-      >
-        {selectedLesson && (
-          <View style={styles.modalContainer}>
-            <LinearGradient
-              colors={[module.color.from, module.color.to]}
-              style={styles.modalHeader}
-            >
-              <TouchableOpacity
-                onPress={() => setLessonModalVisible(false)}
-                style={styles.closeButton}
-              >
-                <Icon name="close" size={24} color={colors.white} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>{selectedLesson.title}</Text>
-              <Text style={styles.modalSubtitle}>{selectedLesson.verseReference}</Text>
-            </LinearGradient>
-
-            <ScrollView style={styles.lessonContent} contentContainerStyle={styles.lessonContentPadding}>
-              <Text style={styles.lessonText}>{selectedLesson.content}</Text>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              {!completedLessons[selectedLesson.id] && (
-                <TouchableOpacity
-                  onPress={handleCompleteLesson}
-                  style={styles.completeButtonWrapper}
-                >
-                  <LinearGradient
-                    colors={colors.gradients.primary}
-                    style={styles.completeButton}
-                  >
-                    <Icon name="check-circle" size={20} color={colors.white} />
-                    <Text style={styles.completeButtonText}>Marcar como Completa</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-              {completedLessons[selectedLesson.id] && (
-                <View style={styles.completedBadge}>
-                  <Icon name="check-circle" size={24} color={colors.success} />
-                  <Text style={styles.completedText}>Lição Completa!</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-      </Modal>
     </View>
   );
 };
@@ -333,80 +281,6 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: colors.slate[600],
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  modalHeader: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: colors.white,
-    marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: colors.white,
-    opacity: 0.9,
-  },
-  lessonContent: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  lessonContentPadding: {
-    padding: 20,
-  },
-  lessonText: {
-    fontSize: 16,
-    lineHeight: 28,
-    color: colors.slate[900],
-  },
-  modalFooter: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.slate[200],
-  },
-  completeButtonWrapper: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-  },
-  completeButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-  },
-  completedText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.success,
   },
 });
 
