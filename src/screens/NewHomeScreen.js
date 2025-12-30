@@ -5,13 +5,63 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
+import GamificationService from '../services/GamificationService';
+import ModulesService from '../services/ModulesService';
 
 const { width } = Dimensions.get('window');
 
 const NewHomeScreen = ({ navigation }) => {
-  const [bookmarks] = useState(3);
-  const [streak] = useState(7);
-  const [weekProgress] = useState([
+  const [userStats, setUserStats] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadData = async () => {
+    try {
+      // Inicializar serviços
+      await GamificationService.initialize();
+
+      // Carregar estatísticas do usuário
+      const stats = await GamificationService.getUserStats();
+      setUserStats(stats);
+
+      // Carregar módulos
+      const allModules = await ModulesService.getAllModules();
+      setModules(allModules);
+    } catch (error) {
+      console.error('Error loading home data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModulePress = (moduleId) => {
+    navigation.navigate('Módulos', {
+      screen: 'ModuleDetail',
+      params: { moduleId },
+    });
+  };
+
+  if (loading || !userStats) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text>Carregando...</Text>
+      </View>
+    );
+  }
+
+  const bookmarks = 3;
+  const weekProgress = [
     { day: 'Seg', value: 0.6 },
     { day: 'Ter', value: 0.8 },
     { day: 'Qua', value: 0.5 },
@@ -19,13 +69,6 @@ const NewHomeScreen = ({ navigation }) => {
     { day: 'Sex', value: 0.7 },
     { day: 'Sáb', value: 1.0 },
     { day: 'Dom', value: 0.6 },
-  ]);
-
-  const featuredModules = [
-    { id: 1, title: 'Leis de Deus', icon: 'book-open-variant', progress: 0.6, color: colors.modules.laws },
-    { id: 2, title: 'Saúde', icon: 'heart-pulse', progress: 0.3, color: colors.modules.health },
-    { id: 3, title: 'Dízimos', icon: 'cash-multiple', progress: 0.8, color: colors.modules.tithes },
-    { id: 4, title: 'Profecia', icon: 'crystal-ball', progress: 0.4, color: colors.modules.prophecy },
   ];
 
   return (
@@ -35,14 +78,19 @@ const NewHomeScreen = ({ navigation }) => {
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Icon name="book-cross" size={28} color={colors.primary[600]} />
-            <Text style={styles.headerTitle}>BíbliaAI</Text>
+            <Text style={styles.headerTitle}>HelloBible</Text>
           </View>
           <View style={styles.headerRight}>
-            <View style={styles.bookmarkBadge}>
-              <Icon name="bookmark" size={20} color={colors.primary[600]} />
-              <Badge style={styles.badge}>{bookmarks}</Badge>
-            </View>
-            <Avatar.Text size={36} label="PS" style={styles.avatar} />
+            <TouchableOpacity style={styles.xpBadge}>
+              <Icon name="star-circle" size={20} color={colors.primary[600]} />
+              <Text style={styles.xpText}>{userStats.xp} XP</Text>
+            </TouchableOpacity>
+            <Avatar.Text
+              size={36}
+              label={`${userStats.level}`}
+              style={styles.avatar}
+              labelStyle={styles.avatarLabel}
+            />
           </View>
         </View>
       </Surface>
@@ -112,7 +160,11 @@ const NewHomeScreen = ({ navigation }) => {
               <Icon name="fire" size={32} color="#f97316" />
               <View style={styles.streakInfo}>
                 <Text style={styles.streakLabel}>Sequência de Estudos</Text>
-                <Text style={styles.streakDays}>{streak} dias</Text>
+                <Text style={styles.streakDays}>{userStats.streak} dias</Text>
+              </View>
+              <View style={styles.levelBadge}>
+                <Icon name="trophy" size={16} color={colors.primary[600]} />
+                <Text style={styles.levelText}>Nível {userStats.level}</Text>
               </View>
             </View>
 
@@ -121,7 +173,7 @@ const NewHomeScreen = ({ navigation }) => {
                 <View key={i} style={styles.streakBarContainer}>
                   <View style={[
                     styles.streakBar,
-                    i < streak && styles.streakBarActive
+                    i < userStats.streak && styles.streakBarActive
                   ]} />
                 </View>
               ))}
@@ -132,20 +184,21 @@ const NewHomeScreen = ({ navigation }) => {
         {/* Featured Modules */}
         <Animated.View entering={FadeInDown.delay(400).duration(800)}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Módulos em Destaque</Text>
-            <TouchableOpacity>
+            <Text style={styles.sectionTitle}>Módulos de Estudo</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Módulos')}>
               <Text style={styles.seeAll}>Ver todos</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modulesGrid}>
-            {featuredModules.map((module, index) => (
+            {modules.slice(0, 4).map((module, index) => (
               <TouchableOpacity
                 key={module.id}
                 style={[
                   styles.moduleCard,
                   { backgroundColor: module.color.bg, borderColor: module.color.border }
                 ]}
+                onPress={() => handleModulePress(module.id)}
               >
                 <LinearGradient
                   colors={[module.color.from, module.color.to]}
@@ -166,6 +219,12 @@ const NewHomeScreen = ({ navigation }) => {
                   />
                   <Text style={[styles.progressText, { color: module.color.text }]}>
                     {Math.round(module.progress * 100)}%
+                  </Text>
+                </View>
+
+                <View style={styles.moduleMeta}>
+                  <Text style={[styles.moduleMetaText, { color: module.color.text }]}>
+                    {module.completedLessons}/{module.totalLessons} lições
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -202,18 +261,18 @@ const NewHomeScreen = ({ navigation }) => {
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>38</Text>
-                <Text style={styles.statLabel}>Estudos</Text>
+                <Text style={styles.statValue}>{userStats.lessonsCompleted}</Text>
+                <Text style={styles.statLabel}>Lições</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>340</Text>
-                <Text style={styles.statLabel}>Minutos</Text>
+                <Text style={styles.statValue}>{userStats.xp}</Text>
+                <Text style={styles.statLabel}>XP Total</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>12</Text>
-                <Text style={styles.statLabel}>Certificados</Text>
+                <Text style={styles.statValue}>{userStats.achievements.length}</Text>
+                <Text style={styles.statLabel}>Conquistas</Text>
               </View>
             </View>
           </Surface>
@@ -253,17 +312,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  bookmarkBadge: {
-    position: 'relative',
+  xpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -8,
-    backgroundColor: colors.primary[600],
+  xpText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary[600],
   },
   avatar: {
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary[600],
+  },
+  avatarLabel: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
@@ -346,6 +418,20 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: colors.slate[900],
   },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  levelText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary[600],
+  },
   streakBars: {
     flexDirection: 'row',
     gap: 8,
@@ -408,6 +494,7 @@ const styles = StyleSheet.create({
   },
   moduleProgress: {
     gap: 4,
+    marginBottom: 8,
   },
   progressBar: {
     height: 4,
@@ -417,6 +504,15 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  moduleMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  moduleMetaText: {
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.7,
   },
   weeklyProgressCard: {
     backgroundColor: colors.white,
