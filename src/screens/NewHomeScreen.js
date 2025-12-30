@@ -139,17 +139,23 @@ const NewHomeScreen = ({ navigation }) => {
         {/* Quick Actions */}
         <Animated.View entering={FadeInDown.delay(200).duration(800)}>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickActionItem}>
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={() => navigation.navigate('StudyTools')}
+            >
               <LinearGradient
                 colors={['#f59e0b', '#f97316']}
                 style={styles.quickActionGradient}
               >
                 <Icon name="brain" size={32} color={colors.white} />
-                <Text style={styles.quickActionText}>Análise IA</Text>
+                <Text style={styles.quickActionText}>Ferramentas IA</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.quickActionItem}>
+            <TouchableOpacity
+              style={styles.quickActionItem}
+              onPress={() => navigation.navigate('SermonPreparation')}
+            >
               <LinearGradient
                 colors={['#3b82f6', '#4f46e5']}
                 style={styles.quickActionGradient}

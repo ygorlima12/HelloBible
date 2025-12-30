@@ -230,6 +230,38 @@ Seja didático e acessível.`;
   }
 
   /**
+   * Gera um sermão completo baseado em um prompt personalizado
+   * @param {string} prompt - Prompt descrevendo o sermão desejado
+   * @returns {Promise<string>} - Sermão gerado
+   */
+  async generateSermon(prompt) {
+    try {
+      const result = await this.sendMessage([
+        {
+          role: 'system',
+          content: `Você é um pastor experiente e professor de teologia. Você ajuda a criar sermões profundos, bem estruturados e pastorais. Use linguagem clara e acessível, mas teologicamente sólida.`,
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ], {
+        model: 'gpt-3.5-turbo',
+        temperature: 0.8,
+        max_tokens: 2500,
+      });
+
+      if (result.success) {
+        return result.message;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Testa a conexão com a API usando a chave fornecida
    * @param {string} apiKey - Chave da API para testar
    * @returns {Promise<Object>} - Resultado do teste
