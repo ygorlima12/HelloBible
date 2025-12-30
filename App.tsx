@@ -7,6 +7,7 @@ import { StatusBar } from 'react-native';
 
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 import ModuleDetailScreen from './src/screens/ModuleDetailScreen';
+import LessonScreen from './src/screens/LessonScreen';
 import { paperTheme } from './src/theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -20,6 +21,7 @@ const App = () => {
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Main" component={BottomTabNavigator} />
             <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} />
+            <Stack.Screen name="Lesson" component={LessonScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>
