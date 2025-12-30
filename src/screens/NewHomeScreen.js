@@ -32,8 +32,16 @@ const NewHomeScreen = ({ navigation }) => {
       await GamificationService.initialize();
 
       // Carregar estatísticas do usuário
-      const stats = await GamificationService.getUserStats();
-      setUserStats(stats);
+      const stats = await GamificationService.getStats();
+
+      // Também precisamos dos achievements desbloqueados
+      const achievements = await GamificationService.getAllAchievements();
+      const unlockedAchievements = achievements.filter(a => a.unlocked);
+
+      setUserStats({
+        ...stats,
+        achievements: unlockedAchievements,
+      });
 
       // Carregar módulos
       const allModules = await ModulesService.getAllModules();
@@ -83,7 +91,7 @@ const NewHomeScreen = ({ navigation }) => {
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.xpBadge}>
               <Icon name="star-circle" size={20} color={colors.primary[600]} />
-              <Text style={styles.xpText}>{userStats.xp} XP</Text>
+              <Text style={styles.xpText}>{userStats.totalXP} XP</Text>
             </TouchableOpacity>
             <Avatar.Text
               size={36}
@@ -266,7 +274,7 @@ const NewHomeScreen = ({ navigation }) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{userStats.xp}</Text>
+                <Text style={styles.statValue}>{userStats.totalXP}</Text>
                 <Text style={styles.statLabel}>XP Total</Text>
               </View>
               <View style={styles.statDivider} />
