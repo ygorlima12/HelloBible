@@ -1,101 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
+import ModulesService from '../services/ModulesService';
 
-const ModulesScreen = () => {
-  const modules = [
-    {
-      id: 1,
-      title: 'Leis de Deus',
-      description: 'Explore os fundamentos das leis divinas e seus princípios eternos.',
-      icon: 'book-open-variant',
-      lessons: 12,
-      duration: 180,
-      progress: 0.6,
-      color: colors.modules.laws,
-    },
-    {
-      id: 2,
-      title: 'Saúde e Bem-Estar',
-      description: 'Descubra os ensinamentos bíblicos sobre saúde física e espiritual.',
-      icon: 'heart-pulse',
-      lessons: 8,
-      duration: 120,
-      progress: 0.3,
-      color: colors.modules.health,
-    },
-    {
-      id: 3,
-      title: 'Dízimos e Ofertas',
-      description: 'Compreenda a importância da mordomia cristã e da generosidade.',
-      icon: 'cash-multiple',
-      lessons: 6,
-      duration: 90,
-      progress: 0.8,
-      color: colors.modules.tithes,
-    },
-    {
-      id: 4,
-      title: 'Profecia Bíblica',
-      description: 'Estude as profecias e seu cumprimento ao longo da história.',
-      icon: 'crystal-ball',
-      lessons: 15,
-      duration: 240,
-      progress: 0.4,
-      color: colors.modules.prophecy,
-    },
-    {
-      id: 5,
-      title: 'Família e Relações',
-      description: 'Aprenda sobre relacionamentos saudáveis segundo a Bíblia.',
-      icon: 'account-group',
-      lessons: 10,
-      duration: 150,
-      progress: 0.5,
-      color: colors.modules.family,
-    },
-    {
-      id: 6,
-      title: 'Parábolas de Jesus',
-      description: 'Mergulhe nas histórias que Jesus usou para ensinar verdades profundas.',
-      icon: 'book-heart',
-      lessons: 14,
-      duration: 210,
-      progress: 0.7,
-      color: colors.modules.parables,
-    },
-    {
-      id: 7,
-      title: 'Reino de Deus',
-      description: 'Entenda os princípios e valores do Reino dos Céus.',
-      icon: 'crown',
-      lessons: 9,
-      duration: 135,
-      progress: 0.2,
-      color: colors.modules.kingdom,
-    },
-    {
-      id: 8,
-      title: 'Criação e Natureza',
-      description: 'Explore a majestade da criação divina e o cuidado com a Terra.',
-      icon: 'earth',
-      lessons: 11,
-      duration: 165,
-      progress: 0.6,
-      color: colors.modules.creation,
-    },
-  ];
+const ModulesScreen = ({ navigation }) => {
+  const [modules, setModules] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadModules();
+
+    // Recarregar quando a tela ganhar foco
+    const unsubscribe = navigation.addListener('focus', loadModules);
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadModules = async () => {
+    const data = await ModulesService.getAllModules();
+    const statsData = await ModulesService.getStats();
+    setModules(data);
+    setStats(statsData);
+  };
+
+  const filteredModules = modules.filter(module =>
+    module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    module.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <Surface style={styles.header} elevation={1}>
         <Text style={styles.headerTitle}>Módulos de Estudo</Text>
-        <Text style={styles.headerSubtitle}>Trilhas de aprendizado guiadas por IA</Text>
+        <Text style={styles.headerSubtitle}>28 Crenças Fundamentais Adventistas</Text>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -104,6 +46,8 @@ const ModulesScreen = () => {
             style={styles.searchInput}
             placeholder="Buscar módulos..."
             placeholderTextColor={colors.slate[400]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
       </Surface>
@@ -114,7 +58,7 @@ const ModulesScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Modules List */}
-        {modules.map((module, index) => (
+        {filteredModules.map((module, index) => (
           <Animated.View
             key={module.id}
             entering={FadeInDown.delay(index * 50).duration(800)}
@@ -127,6 +71,7 @@ const ModulesScreen = () => {
                   borderColor: module.color.border,
                 }
               ]}
+              onPress={() => navigation.navigate('ModuleDetail', { moduleId: module.id })}
             >
               <View style={styles.moduleContent}>
                 <LinearGradient
@@ -147,11 +92,11 @@ const ModulesScreen = () => {
                   <View style={styles.moduleMetadata}>
                     <View style={styles.metadataItem}>
                       <Icon name="book-open-page-variant" size={14} color={colors.slate[600]} />
-                      <Text style={styles.metadataText}>{module.lessons} lições</Text>
+                      <Text style={styles.metadataText}>{module.totalLessons} lições</Text>
                     </View>
                     <View style={styles.metadataItem}>
                       <Icon name="clock-outline" size={14} color={colors.slate[600]} />
-                      <Text style={styles.metadataText}>{module.duration} min</Text>
+                      <Text style={styles.metadataText}>{module.estimatedTime} min</Text>
                     </View>
                   </View>
 
@@ -180,30 +125,32 @@ const ModulesScreen = () => {
         ))}
 
         {/* Achievement Banner */}
-        <Animated.View entering={FadeInDown.delay(400).duration(800)}>
-          <LinearGradient
-            colors={['#f59e0b', '#f97316']}
-            style={styles.achievementBanner}
-          >
-            <Icon name="trophy" size={40} color={colors.white} />
-            <View style={styles.achievementContent}>
-              <Text style={styles.achievementTitle}>Continue assim!</Text>
-              <Text style={styles.achievementText}>
-                Você está no Top 10% dos estudantes
-              </Text>
-              <View style={styles.achievementBadges}>
-                <View style={styles.achievementBadge}>
-                  <Icon name="certificate" size={16} color={colors.white} />
-                  <Text style={styles.badgeText}>5 Certificados</Text>
-                </View>
-                <View style={styles.achievementBadge}>
-                  <Icon name="fire" size={16} color={colors.white} />
-                  <Text style={styles.badgeText}>7 dias</Text>
+        {stats && stats.completedLessons > 0 && (
+          <Animated.View entering={FadeInDown.delay(400).duration(800)}>
+            <LinearGradient
+              colors={['#f59e0b', '#f97316']}
+              style={styles.achievementBanner}
+            >
+              <Icon name="trophy" size={40} color={colors.white} />
+              <View style={styles.achievementContent}>
+                <Text style={styles.achievementTitle}>Continue assim!</Text>
+                <Text style={styles.achievementText}>
+                  {stats.completedLessons} lições concluídas
+                </Text>
+                <View style={styles.achievementBadges}>
+                  <View style={styles.achievementBadge}>
+                    <Icon name="book-check" size={16} color={colors.white} />
+                    <Text style={styles.badgeText}>{stats.completedModules} Módulos</Text>
+                  </View>
+                  <View style={styles.achievementBadge}>
+                    <Icon name="fire" size={16} color={colors.white} />
+                    <Text style={styles.badgeText}>{Math.round(stats.overallProgress * 100)}% Completo</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
+            </LinearGradient>
+          </Animated.View>
+        )}
       </ScrollView>
     </View>
   );
