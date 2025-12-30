@@ -3,16 +3,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const PROGRESS_STORAGE_KEY = '@HelloBible:modules_progress';
 
 /**
- * Serviço para gerenciar módulos de estudo baseados nas
- * 28 Crenças Fundamentais da Igreja Adventista do Sétimo Dia
+ * Serviço para gerenciar módulos de estudo
+ * Sistema gamificado com lições em formato de cards interativos
  */
 
-// Dados dos módulos baseados nas 28 Crenças Fundamentais
+// Dados dos módulos com lições em formato de cards
 export const MODULES_DATA = [
   {
     id: 1,
     title: 'Fundamentos da Fé',
-    description: 'Conheça as bases da fé cristã adventista: Escrituras, Trindade e a natureza de Deus.',
+    description: 'Descubra os pilares essenciais da fé cristã através de uma jornada interativa.',
     icon: 'book-open-variant',
     color: {
       from: '#3b82f6',
@@ -26,199 +26,260 @@ export const MODULES_DATA = [
     lessons: [
       {
         id: 1,
-        title: 'As Sagradas Escrituras',
-        description: 'A Bíblia é a Palavra de Deus inspirada, a revelação autorizada de Sua vontade.',
-        content: `# As Sagradas Escrituras
-
-## Crença Fundamental #1
-
-**Texto-chave:** "Toda Escritura é inspirada por Deus e útil para o ensino, para a repreensão, para a correção, para a educação na justiça." - 2 Timóteo 3:16
-
-### O que cremos
-
-As Escrituras Sagradas, o Antigo e o Novo Testamentos, são a Palavra de Deus escrita, dada por inspiração divina. Os autores sagrados foram inspirados pelo Espírito Santo.
-
-### Pontos principais
-
-1. **Inspiração Divina**
-   - A Bíblia foi escrita por homens inspirados por Deus
-   - O Espírito Santo guiou os autores
-   - É a revelação infalível da vontade de Deus
-
-2. **Autoridade Suprema**
-   - A Bíblia é a norma suprema de fé e prática
-   - É o teste pelo qual todo ensinamento deve ser provado
-   - Revela princípios eternos
-
-3. **Aplicação Prática**
-   - Guia para a vida diária
-   - Fonte de sabedoria e conhecimento
-   - Transforma vidas através do poder de Deus
-
-### Para reflexão
-
-- Como você tem estudado a Bíblia diariamente?
-- De que forma a Palavra de Deus tem transformado sua vida?
-- Você confia na Bíblia como sua única regra de fé?
-
-### Versículos para estudo
-
-- 2 Pedro 1:20-21
-- Salmos 119:105
-- João 17:17
-- Hebreus 4:12`,
-        verseReference: '2 Timóteo 3:16',
+        title: 'A Palavra de Deus',
+        description: 'Entenda a importância e o poder da Bíblia em sua vida.',
         duration: 15,
+        verseReference: '2 Timóteo 3:16',
+        cards: [
+          {
+            type: 'content',
+            icon: 'book-open-page-variant',
+            title: 'O Livro Sagrado',
+            content: 'A Bíblia é mais que um livro comum. É a Palavra inspirada de Deus, escrita por pessoas guiadas pelo Espírito Santo. Ela contém sabedoria eterna para guiar sua vida.',
+          },
+          {
+            type: 'content',
+            icon: 'lightbulb-on',
+            title: 'Uma Luz no Caminho',
+            content: 'A Bíblia ilumina nosso caminho como uma lanterna na escuridão. Ela nos mostra a direção certa quando estamos perdidos e nos dá respostas para as questões mais profundas da vida.',
+            verse: '"Lâmpada para os meus pés é a tua palavra e luz, para o meu caminho."',
+            verseReference: 'Salmos 119:105',
+          },
+          {
+            type: 'content',
+            icon: 'shield-check',
+            title: 'Seu Guia Confiável',
+            content: 'Você pode confiar na Bíblia como sua fonte de verdade. Ela tem transformado vidas há milhares de anos e continua relevante hoje.',
+            keyPoints: [
+              'A Bíblia é inspirada por Deus',
+              'Ela é confiável e verdadeira',
+              'Transforma vidas quando aplicada',
+              'É seu manual para a vida',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'O que torna a Bíblia especial?',
+                options: [
+                  'É um livro muito antigo',
+                  'Foi inspirada por Deus',
+                  'Tem muitas páginas',
+                  'Foi escrita por sábios',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Como a Bíblia pode ajudar você?',
+                options: [
+                  'Apenas como decoração',
+                  'Para estudos históricos',
+                  'Como guia para a vida',
+                  'Somente aos domingos',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 2,
-        title: 'A Trindade',
-        description: 'Há um só Deus: Pai, Filho e Espírito Santo, uma unidade de três Pessoas coeternas.',
-        content: `# A Trindade
-
-## Crença Fundamental #2
-
-**Texto-chave:** "Portanto, ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo." - Mateus 28:19
-
-### O que cremos
-
-Há um só Deus: Pai, Filho e Espírito Santo, uma unidade de três Pessoas coeternas. Deus é imortal, todo-poderoso, onisciente, acima de tudo e sempre presente.
-
-### Pontos principais
-
-1. **Um Só Deus**
-   - Monoteísmo bíblico
-   - Unidade perfeita entre as três Pessoas
-   - Cada Pessoa é plenamente Deus
-
-2. **O Pai**
-   - Criador, Fonte e Sustentador de tudo
-   - Deus de amor, justiça e misericórdia
-   - Pai celestial de todos os crentes
-
-3. **O Filho (Jesus Cristo)**
-   - Deus eterno encarnado
-   - Salvador da humanidade
-   - Mediador entre Deus e os homens
-
-4. **O Espírito Santo**
-   - Presente ativo de Deus
-   - Consolador e Guia
-   - Agente da transformação
-
-### Para reflexão
-
-- Como você experimenta a presença de cada Pessoa da Trindade?
-- De que forma o Espírito Santo tem guiado sua vida?
-- Qual o papel de Jesus Cristo em sua salvação?
-
-### Versículos para estudo
-
-- Mateus 28:19
-- 2 Coríntios 13:13
-- João 14:16-17
-- 1 João 5:7`,
-        verseReference: 'Mateus 28:19',
+        title: 'Quem é Deus?',
+        description: 'Conheça o caráter amoroso de Deus e como Ele se relaciona com você.',
         duration: 15,
+        verseReference: '1 João 4:8',
+        cards: [
+          {
+            type: 'content',
+            icon: 'heart',
+            title: 'Deus é Amor',
+            content: 'A característica mais importante de Deus é Seu amor. Ele não apenas ama - Ele É amor. Esse amor é incondicional, eterno e transformador.',
+            verse: '"Deus é amor."',
+            verseReference: '1 João 4:8',
+          },
+          {
+            type: 'content',
+            icon: 'account-group',
+            title: 'Três em Um',
+            content: 'Deus se revela de três formas: como Pai Criador, como Filho Salvador (Jesus), e como Espírito Santo Consolador. Três Pessoas, mas um só Deus.',
+            keyPoints: [
+              'Deus Pai - Nosso Criador',
+              'Jesus - Nosso Salvador',
+              'Espírito Santo - Nosso Guia',
+              'Unidos em amor por você',
+            ],
+          },
+          {
+            type: 'content',
+            icon: 'account-heart',
+            title: 'Ele Se Importa com Você',
+            content: 'Deus não é distante ou indiferente. Ele conhece você pessoalmente, se importa com cada detalhe da sua vida e deseja um relacionamento real com você.',
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Qual é a natureza essencial de Deus?',
+                options: [
+                  'Ele é rigoroso e distante',
+                  'Ele é amor',
+                  'Ele é indiferente',
+                  'Ele é imprevisível',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Como Deus se manifesta?',
+                options: [
+                  'Apenas como Pai',
+                  'Somente como Jesus',
+                  'Como Pai, Filho e Espírito Santo',
+                  'Ele não se manifesta',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 3,
-        title: 'Deus Pai',
-        description: 'Deus, o Pai Eterno, é o Criador, Originador, Mantenedor e Soberano de toda a criação.',
-        content: `# Deus Pai
-
-## Crença Fundamental #3
-
-**Texto-chave:** "Um só Deus e Pai de todos, o qual é sobre todos, age por meio de todos e está em todos." - Efésios 4:6
-
-### O que cremos
-
-Deus, o Pai Eterno, é o Criador, Originador, Mantenedor e Soberano de toda a criação. Ele é justo e santo, misericordioso e clemente, tardio em irar-Se e grande em constante amor e fidelidade.
-
-### Pontos principais
-
-1. **Criador de Tudo**
-   - Autor da vida e do universo
-   - Mantém tudo pelo Seu poder
-   - Provê para Suas criaturas
-
-2. **Pai Amoroso**
-   - Ama incondicionalmente
-   - Cuida de cada detalhe
-   - Deseja relacionamento com Seus filhos
-
-3. **Soberano Justo**
-   - Governa com justiça
-   - Misericordioso e compassivo
-   - Fiel em todas as Suas promessas
-
-### Para reflexão
-
-- Como você vê Deus como Pai?
-- De que forma você tem experimentado Seu amor e cuidado?
-- Você confia na soberania de Deus sobre sua vida?
-
-### Versículos para estudo
-
-- Efésios 4:6
-- João 3:16
-- 1 João 4:8
-- Salmos 103:13`,
-        verseReference: 'Efésios 4:6',
+        title: 'Jesus - O Salvador',
+        description: 'Descubra quem é Jesus e por que Ele veio ao mundo.',
         duration: 15,
+        verseReference: 'João 3:16',
+        cards: [
+          {
+            type: 'content',
+            icon: 'star',
+            title: 'Deus Se Tornou Humano',
+            content: 'Jesus não é apenas um profeta ou mestre. Ele é Deus que se tornou humano para nos salvar. Viveu como nós, mas sem pecado.',
+          },
+          {
+            type: 'content',
+            icon: 'heart-broken',
+            title: 'Morreu Por Você',
+            content: 'Jesus morreu na cruz para pagar o preço dos nossos erros. Ele tomou nosso lugar, recebendo a punição que merecíamos.',
+            verse: '"Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo o que nele crê não pereça, mas tenha a vida eterna."',
+            verseReference: 'João 3:16',
+          },
+          {
+            type: 'content',
+            icon: 'emoticon-excited',
+            title: 'Ressuscitou!',
+            content: 'A história não terminou na cruz. Jesus ressuscitou três dias depois, provando que Ele venceu a morte e o pecado. Por isso, você também pode ter vida eterna!',
+            keyPoints: [
+              'Jesus viveu uma vida perfeita',
+              'Morreu em nosso lugar',
+              'Ressuscitou ao terceiro dia',
+              'Oferece salvação gratuita a todos',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Quem é Jesus?',
+                options: [
+                  'Apenas um bom professor',
+                  'Um profeta comum',
+                  'Deus que se tornou humano',
+                  'Um líder religioso',
+                ],
+                correctAnswer: 2,
+              },
+              {
+                question: 'Por que Jesus morreu na cruz?',
+                options: [
+                  'Por ser um criminoso',
+                  'Para nos salvar do pecado',
+                  'Por acidente',
+                  'Porque foi traído',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'O que aconteceu três dias depois?',
+                options: [
+                  'Nada aconteceu',
+                  'Ele foi esquecido',
+                  'Ele ressuscitou',
+                  'Seus discípulos fugiram',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 4,
-        title: 'Deus Filho',
-        description: 'Jesus Cristo é verdadeiro Deus, eterno, coexistente com o Pai. É o Criador e Salvador.',
-        content: `# Deus Filho
-
-## Crença Fundamental #4
-
-**Texto-chave:** "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus." - João 1:1
-
-### O que cremos
-
-Deus, o Filho Eterno, encarnou-Se em Jesus Cristo. Por meio dEle foram criadas todas as coisas, é revelado o caráter de Deus, efetuada a salvação da humanidade e julgado o mundo.
-
-### Pontos principais
-
-1. **Divindade de Cristo**
-   - É plenamente Deus
-   - Eterno e coexistente com o Pai
-   - Criador de todas as coisas
-
-2. **Humanidade de Cristo**
-   - Tornou-se plenamente humano
-   - Viveu sem pecado
-   - Tentado em tudo, mas venceu
-
-3. **Obra Salvadora**
-   - Morreu em nosso lugar
-   - Ressuscitou para nossa justificação
-   - Intercede por nós no Céu
-
-### Para reflexão
-
-- Jesus é seu Salvador pessoal?
-- Como a vida de Cristo serve de exemplo para você?
-- Você aceita Jesus como Senhor e Salvador?
-
-### Versículos para estudo
-
-- João 1:1-14
-- Filipenses 2:5-11
-- Colossenses 1:15-20
-- Hebreus 1:1-3`,
-        verseReference: 'João 1:1',
+        title: 'O Espírito Santo',
+        description: 'Conheça o Consolador que habita em você e te guia diariamente.',
         duration: 15,
+        verseReference: 'João 14:26',
+        cards: [
+          {
+            type: 'content',
+            icon: 'weather-windy',
+            title: 'Quem é o Espírito Santo?',
+            content: 'O Espírito Santo não é uma força ou energia impessoal. Ele é uma Pessoa - a terceira Pessoa da Trindade. Ele é Deus presente em você.',
+          },
+          {
+            type: 'content',
+            icon: 'compass',
+            title: 'Seu Guia Pessoal',
+            content: 'O Espírito Santo é como um GPS espiritual. Ele te guia nas decisões, te ensina a verdade, te lembra das palavras de Jesus e te dá força para viver corretamente.',
+            verse: '"Mas o Consolador, o Espírito Santo, a quem o Pai enviará em meu nome, esse vos ensinará todas as coisas."',
+            verseReference: 'João 14:26',
+          },
+          {
+            type: 'content',
+            icon: 'gift',
+            title: 'Presentes Especiais',
+            content: 'O Espírito Santo dá dons espirituais - habilidades especiais para servir a Deus e ajudar outros. Ele também produz frutos em sua vida: amor, alegria, paz e muito mais!',
+            keyPoints: [
+              'Ele te guia e ensina',
+              'Transforma seu caráter',
+              'Dá poder para viver bem',
+              'Concede dons para servir',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'O que é o Espírito Santo?',
+                options: [
+                  'Uma força impessoal',
+                  'A terceira Pessoa da Trindade',
+                  'Um anjo especial',
+                  'Uma energia mística',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Qual é o papel do Espírito Santo?',
+                options: [
+                  'Apenas observar',
+                  'Nos condenar',
+                  'Nos guiar e transformar',
+                  'Nos punir',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
   {
     id: 2,
-    title: 'Salvação e Vida Cristã',
-    description: 'Entenda o plano da salvação, o papel do Espírito Santo e como viver uma vida transformada.',
+    title: 'Vivendo a Fé',
+    description: 'Aprenda como aplicar a fé no seu dia a dia de forma prática e transformadora.',
     icon: 'heart-pulse',
     color: {
       from: '#10b981',
@@ -227,247 +288,197 @@ Deus, o Filho Eterno, encarnou-Se em Jesus Cristo. Por meio dEle foram criadas t
       border: '#bbf7d0',
       text: '#15803d',
     },
-    totalLessons: 5,
-    estimatedTime: 75,
+    totalLessons: 3,
+    estimatedTime: 45,
     lessons: [
       {
         id: 5,
-        title: 'Deus Espírito Santo',
-        description: 'O Espírito Santo inspira, convence, transforma e santifica.',
-        content: `# Deus Espírito Santo
-
-## Crença Fundamental #5
-
-**Texto-chave:** "Mas o Consolador, o Espírito Santo, a quem o Pai enviará em meu nome, esse vos ensinará todas as coisas e vos fará lembrar de tudo o que vos tenho dito." - João 14:26
-
-### O que cremos
-
-Deus, o Espírito Santo, desempenhou uma parte ativa com o Pai e o Filho na Criação, encarnação e redenção. Inspirou os escritores das Escrituras. Enche a vida dos cristãos com poder.
-
-### Pontos principais
-
-1. **Consolador e Guia**
-   - Presente de Deus para os crentes
-   - Ensina toda a verdade
-   - Lembra das palavras de Jesus
-
-2. **Agente de Transformação**
-   - Convence do pecado
-   - Regenera o coração
-   - Produz frutos na vida
-
-3. **Capacitador para o Serviço**
-   - Concede dons espirituais
-   - Dá poder para testemunhar
-   - Guia na missão
-
-### Para reflexão
-
-- Você tem permitido ao Espírito Santo guiar sua vida?
-- Quais frutos do Espírito são evidentes em você?
-- Como você pode ser mais sensível à Sua voz?
-
-### Versículos para estudo
-
-- João 14:26; 16:7-14
-- Atos 1:8
-- Gálatas 5:22-23
-- 1 Coríntios 12:4-11`,
-        verseReference: 'João 14:26',
+        title: 'Oração - Falando com Deus',
+        description: 'Descubra como ter uma conversa real e poderosa com Deus.',
         duration: 15,
+        verseReference: 'Mateus 6:6',
+        cards: [
+          {
+            type: 'content',
+            icon: 'chat',
+            title: 'Uma Conversa Real',
+            content: 'Oração não é repetir palavras bonitas ou usar uma linguagem formal. É simplesmente conversar com Deus como você fala com um amigo próximo.',
+          },
+          {
+            type: 'content',
+            icon: 'door-open',
+            title: 'Deus Está Ouvindo',
+            content: 'Você pode falar com Deus a qualquer hora, em qualquer lugar, sobre qualquer coisa. Ele sempre está disponível e nunca está ocupado demais para você.',
+            verse: '"Peçam, e será dado a vocês; busquem, e encontrarão; batam, e a porta será aberta."',
+            verseReference: 'Mateus 7:7',
+          },
+          {
+            type: 'content',
+            icon: 'format-list-checks',
+            title: 'Como Orar?',
+            content: 'Não existe fórmula mágica, mas você pode seguir este guia simples:',
+            keyPoints: [
+              'Comece agradecendo a Deus',
+              'Confesse seus erros',
+              'Peça o que precisa',
+              'Ore pelos outros',
+              'Ouça o que Deus quer te dizer',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'O que é oração?',
+                options: [
+                  'Repetir palavras decoradas',
+                  'Conversar com Deus',
+                  'Algo só para pastores',
+                  'Um ritual complicado',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Quando posso orar?',
+                options: [
+                  'Apenas aos domingos',
+                  'Somente na igreja',
+                  'A qualquer hora e lugar',
+                  'Só em emergências',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 6,
-        title: 'A Criação',
-        description: 'Deus é o Criador de todas as coisas e revelou nas Escrituras o relato autêntico de Sua atividade criadora.',
-        content: `# A Criação
-
-## Crença Fundamental #6
-
-**Texto-chave:** "No princípio, criou Deus os céus e a terra." - Gênesis 1:1
-
-### O que cremos
-
-Deus é o Criador de todas as coisas e revelou nas Escrituras o relato autêntico de Sua atividade criadora. Em seis dias fez o Senhor "os céus e a terra" e tudo que tem vida sobre a Terra.
-
-### Pontos principais
-
-1. **Deus Criador**
-   - Criou tudo em seis dias literais
-   - Criação perfeita e harmoniosa
-   - Ser humano criado à imagem de Deus
-
-2. **Propósito da Criação**
-   - Manifestar a glória de Deus
-   - Demonstrar Seu amor
-   - Prover lar para a humanidade
-
-3. **Responsabilidade Humana**
-   - Mordomia da criação
-   - Cuidado com o meio ambiente
-   - Respeito pela vida
-
-### Para reflexão
-
-- Como você vê a mão de Deus na criação?
-- Você cuida bem do planeta que Deus criou?
-- A criação fortalece sua fé em Deus?
-
-### Versículos para estudo
-
-- Gênesis 1-2
-- Salmos 19:1-6
-- Hebreus 11:3
-- Apocalipse 14:7`,
-        verseReference: 'Gênesis 1:1',
+        title: 'Perdão e Graça',
+        description: 'Entenda o poder transformador do perdão de Deus.',
         duration: 15,
+        verseReference: '1 João 1:9',
+        cards: [
+          {
+            type: 'content',
+            icon: 'heart-remove',
+            title: 'Todos Erramos',
+            content: 'Ninguém é perfeito. Todos nós cometemos erros e falhamos. Mas a boa notícia é que Deus não desistiu de você!',
+          },
+          {
+            type: 'content',
+            icon: 'check-circle',
+            title: 'Perdão Gratuito',
+            content: 'Deus oferece perdão completo e gratuito. Você não precisa merecer, pagar ou ser bom o suficiente. Basta confessar e aceitar.',
+            verse: '"Se confessarmos os nossos pecados, ele é fiel e justo para nos perdoar."',
+            verseReference: '1 João 1:9',
+          },
+          {
+            type: 'content',
+            icon: 'refresh',
+            title: 'Recomeço Total',
+            content: 'Quando Deus perdoa, Ele apaga completamente seu passado. É como se você nunca tivesse errado. Ele te dá um recomeço fresco!',
+            keyPoints: [
+              'Deus perdoa qualquer erro',
+              'O perdão é gratuito',
+              'Você recebe um novo começo',
+              'Deve perdoar os outros também',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Quem pode receber o perdão de Deus?',
+                options: [
+                  'Apenas pessoas muito boas',
+                  'Somente líderes religiosos',
+                  'Qualquer pessoa que confesse',
+                  'Ninguém merece perdão',
+                ],
+                correctAnswer: 2,
+              },
+              {
+                question: 'O que você precisa fazer para ser perdoado?',
+                options: [
+                  'Pagar uma quantia',
+                  'Fazer boas obras primeiro',
+                  'Confessar e aceitar',
+                  'Esperar merecer',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
       {
         id: 7,
-        title: 'A Natureza do Homem',
-        description: 'O ser humano foi criado à imagem de Deus, mas caiu em pecado.',
-        content: `# A Natureza do Homem
-
-## Crença Fundamental #7
-
-**Texto-chave:** "Criou Deus, pois, o homem à sua imagem, à imagem de Deus o criou; homem e mulher os criou." - Gênesis 1:27
-
-### O que cremos
-
-O homem e a mulher foram feitos à imagem de Deus, com individualidade, poder e liberdade de pensar e agir. Criados como seres livres, cada um é uma unidade indivisível de corpo, mente e espírito.
-
-### Pontos principais
-
-1. **Criação à Imagem de Deus**
-   - Capacidade de raciocinar
-   - Liberdade de escolha
-   - Natureza moral e espiritual
-
-2. **Unidade do Ser**
-   - Corpo, mente e espírito integrados
-   - Não possui alma imortal
-   - Na morte, volta ao pó
-
-3. **Queda e Necessidade**
-   - Todos pecaram
-   - Necessitam de redenção
-   - Dependem da graça de Deus
-
-### Para reflexão
-
-- Você reconhece seu valor como criação de Deus?
-- Como você cuida de seu corpo, mente e espírito?
-- Você aceita sua necessidade de um Salvador?
-
-### Versículos para estudo
-
-- Gênesis 1:26-27; 2:7
-- Salmos 8:4-8
-- Romanos 3:23
-- Eclesiastes 12:7`,
-        verseReference: 'Gênesis 1:27',
+        title: 'Fé em Ação',
+        description: 'Transforme sua fé em atitudes práticas que fazem diferença.',
         duration: 15,
-      },
-      {
-        id: 8,
-        title: 'O Grande Conflito',
-        description: 'A humanidade está envolvida num grande conflito entre Cristo e Satanás.',
-        content: `# O Grande Conflito
-
-## Crença Fundamental #8
-
-**Texto-chave:** "Houve peleja no céu. Miguel e os seus anjos pelejaram contra o dragão." - Apocalipse 12:7
-
-### O que cremos
-
-Toda a humanidade está envolvida num grande conflito entre Cristo e Satanás quanto ao caráter de Deus, Sua Lei e Sua soberania sobre o Universo.
-
-### Pontos principais
-
-1. **Origem do Conflito**
-   - Lúcifer se rebelou no Céu
-   - Questionou o caráter de Deus
-   - Foi expulso com seus anjos
-
-2. **Campo de Batalha**
-   - Terra é o palco do conflito
-   - Cada pessoa deve escolher um lado
-   - Cristo já garantiu a vitória
-
-3. **Desfecho Final**
-   - Satanás será destruído
-   - Pecado será erradicado
-   - Universo voltará à harmonia
-
-### Para reflexão
-
-- Você está consciente dessa batalha espiritual?
-- De que lado você está neste conflito?
-- Como você pode resistir ao inimigo?
-
-### Versículos para estudo
-
-- Apocalipse 12:7-9
-- Ezequiel 28:12-18
-- Isaías 14:12-14
-- Efésios 6:12`,
-        verseReference: 'Apocalipse 12:7',
-        duration: 15,
-      },
-      {
-        id: 9,
-        title: 'Vida, Morte e Ressurreição de Cristo',
-        description: 'Na vida de Cristo de perfeita obediência à vontade de Deus, Seu sofrimento, morte e ressurreição, Deus proveu o único meio de expiação do pecado.',
-        content: `# Vida, Morte e Ressurreição de Cristo
-
-## Crença Fundamental #9
-
-**Texto-chave:** "Mas Deus prova o seu próprio amor para conosco pelo fato de ter Cristo morrido por nós, sendo nós ainda pecadores." - Romanos 5:8
-
-### O que cremos
-
-Na vida de Cristo, Sua morte na cruz e ressurreição, Deus proveu o único meio de expiação do pecado humano. Sua morte é substitutiva, expiatória e reconciliadora.
-
-### Pontos principais
-
-1. **Vida Perfeita**
-   - Viveu sem pecado
-   - Obediente em tudo
-   - Exemplo para nós
-
-2. **Morte Expiatória**
-   - Morreu em nosso lugar
-   - Pagou o preço do pecado
-   - Reconciliou-nos com Deus
-
-3. **Ressurreição Vitoriosa**
-   - Venceu a morte
-   - Garantiu nossa ressurreição
-   - Demonstrou Seu poder
-
-### Para reflexão
-
-- O que a cruz significa para você?
-- Você aceitou o sacrifício de Cristo?
-- Como a ressurreição impacta sua vida diária?
-
-### Versículos para estudo
-
-- Romanos 5:8-10
-- 1 Coríntios 15:3-4
-- 1 Pedro 2:21-24
-- 2 Coríntios 5:19-21`,
-        verseReference: 'Romanos 5:8',
-        duration: 15,
+        verseReference: 'Tiago 2:17',
+        cards: [
+          {
+            type: 'content',
+            icon: 'run-fast',
+            title: 'Fé Que Age',
+            content: 'Fé verdadeira não é apenas acreditar com a mente. É confiar tanto em Deus que suas ações refletem essa confiança.',
+          },
+          {
+            type: 'content',
+            icon: 'hand-heart',
+            title: 'Amor em Prática',
+            content: 'Sua fé deve se manifestar através do amor. Ajudar quem precisa, perdoar quem te machucou, ser gentil, generoso e compassivo.',
+            verse: '"A fé sem obras é morta."',
+            verseReference: 'Tiago 2:17',
+          },
+          {
+            type: 'content',
+            icon: 'lightbulb-on',
+            title: 'Seja a Luz',
+            content: 'Você foi chamado para ser luz no mundo. Isso significa viver de forma que outros vejam Deus através de você.',
+            keyPoints: [
+              'Pratique o amor diariamente',
+              'Ajude quem está necessitado',
+              'Seja honesto e íntegro',
+              'Compartilhe sua fé com outros',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Como a fé verdadeira se manifesta?',
+                options: [
+                  'Apenas em palavras',
+                  'Através de ações',
+                  'Não precisa se manifestar',
+                  'Só em pensamentos',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Qual é o papel do cristão no mundo?',
+                options: [
+                  'Se isolar das pessoas',
+                  'Julgar os outros',
+                  'Ser luz e ajudar',
+                  'Apenas frequentar igreja',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
-  // Continue com os outros módulos...
   {
     id: 3,
-    title: 'A Lei de Deus e o Sábado',
-    description: 'Descubra a importância da Lei de Deus e a santidade do Sábado como memorial da criação.',
-    icon: 'cash-multiple',
+    title: 'Princípios de Vida',
+    description: 'Descubra princípios eternos que trazem paz, propósito e plenitude.',
+    icon: 'compass',
     color: {
       from: '#f59e0b',
       to: '#f97316',
@@ -479,177 +490,192 @@ Na vida de Cristo, Sua morte na cruz e ressurreição, Deus proveu o único meio
     estimatedTime: 45,
     lessons: [
       {
+        id: 8,
+        title: 'Os Mandamentos de Deus',
+        description: 'Entenda os princípios de amor que guiam uma vida plena.',
+        duration: 15,
+        verseReference: 'João 14:15',
+        cards: [
+          {
+            type: 'content',
+            icon: 'book-heart',
+            title: 'Guia Para a Vida',
+            content: 'Os mandamentos de Deus não são regras para te limitar, mas um mapa para te proteger e levar à felicidade verdadeira.',
+          },
+          {
+            type: 'content',
+            icon: 'shield-heart',
+            title: 'Proteção e Liberdade',
+            content: 'Cada mandamento é como uma cerca de proteção. Dentro deles, você encontra verdadeira liberdade e paz.',
+            keyPoints: [
+              'Amar a Deus acima de tudo',
+              'Não adorar ídolos ou imagens',
+              'Respeitar o nome de Deus',
+              'Guardar um dia especial com Deus',
+              'Honrar pai e mãe',
+              'Não tirar vidas',
+              'Ser fiel nos relacionamentos',
+              'Não roubar',
+              'Não mentir',
+              'Não cobiçar o que é dos outros',
+            ],
+          },
+          {
+            type: 'content',
+            icon: 'heart',
+            title: 'Resumo: Amor',
+            content: 'Jesus resumiu tudo em duas regras simples: Amar a Deus com todo seu coração, e amar seu próximo como a si mesmo.',
+            verse: '"Se vocês me amam, obedecerão aos meus mandamentos."',
+            verseReference: 'João 14:15',
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Qual é o propósito dos mandamentos?',
+                options: [
+                  'Nos limitar e punir',
+                  'Nos proteger e guiar',
+                  'Nos fazer infelizes',
+                  'São regras antigas sem valor',
+                ],
+                correctAnswer: 1,
+              },
+              {
+                question: 'Como Jesus resumiu os mandamentos?',
+                options: [
+                  'Em 10 regras complicadas',
+                  'Não importa mais hoje',
+                  'Amar a Deus e ao próximo',
+                  'Apenas cumprir rituais',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 9,
+        title: 'Generosidade e Mordomia',
+        description: 'Aprenda sobre administrar bem o que Deus te confiou.',
+        duration: 15,
+        verseReference: '2 Coríntios 9:7',
+        cards: [
+          {
+            type: 'content',
+            icon: 'gift',
+            title: 'Tudo é de Deus',
+            content: 'Tudo o que você tem é um presente de Deus. Você é um administrador dos recursos que Ele te confiou: tempo, talentos, dinheiro, saúde.',
+          },
+          {
+            type: 'content',
+            icon: 'hand-coin',
+            title: 'Alegria em Dar',
+            content: 'Deus ama quem dá com alegria! Não é sobre quanto você dá, mas com que atitude. Ser generoso traz bênçãos para você e para outros.',
+            verse: '"Cada um contribua segundo propôs no coração, não com tristeza ou por necessidade; porque Deus ama ao que dá com alegria."',
+            verseReference: '2 Coríntios 9:7',
+          },
+          {
+            type: 'content',
+            icon: 'cash-multiple',
+            title: 'Devolvendo a Deus',
+            content: 'Uma forma de agradecer a Deus é devolvendo parte do que Ele nos deu. Isso demonstra confiança e gratidão.',
+            keyPoints: [
+              'Tudo pertence a Deus',
+              'Seja fiel com o que tem',
+              'Dê com alegria, não por obrigação',
+              'Confie que Deus provê',
+              'Use seus recursos para abençoar',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'De quem são realmente seus bens?',
+                options: [
+                  'São 100% meus',
+                  'Da minha família',
+                  'São presentes de Deus',
+                  'Do governo',
+                ],
+                correctAnswer: 2,
+              },
+              {
+                question: 'Como devemos dar?',
+                options: [
+                  'Com tristeza e obrigação',
+                  'Com alegria e gratidão',
+                  'Apenas quando sobra',
+                  'Não precisamos dar',
+                ],
+                correctAnswer: 1,
+              },
+            ],
+          },
+        ],
+      },
+      {
         id: 10,
-        title: 'A Lei de Deus',
-        description: 'Os Dez Mandamentos são a expressão do caráter de Deus e continuam válidos.',
-        content: `# A Lei de Deus
-
-## Crença Fundamental #19
-
-**Texto-chave:** "Porque o amor de Deus é este: que guardemos os seus mandamentos; ora, os seus mandamentos não são penosos." - 1 João 5:3
-
-### O que cremos
-
-Os grandes princípios da Lei de Deus são incorporados nos Dez Mandamentos. Eles continuam válidos para a humanidade e são base do juízo de Deus.
-
-### Pontos principais
-
-1. **Natureza da Lei**
-   - Expressão do caráter de Deus
-   - Santa, justa e boa
-   - Eterna e imutável
-
-2. **Propósito da Lei**
-   - Revelar o pecado
-   - Guiar para uma vida santa
-   - Demonstrar necessidade de Cristo
-
-3. **Obediência por Amor**
-   - Guardamos por amar a Deus
-   - Cristo capacita a obediência
-   - Fruto da salvação, não meio
-
-### Os Dez Mandamentos
-
-1. Não terás outros deuses
-2. Não farás imagem de escultura
-3. Não tomarás o nome de Deus em vão
-4. Lembra-te do sábado para santificá-lo
-5. Honra teu pai e tua mãe
-6. Não matarás
-7. Não adulterarás
-8. Não furtarás
-9. Não darás falso testemunho
-10. Não cobiçarás
-
-### Para reflexão
-
-- Você vê a Lei como expressão do amor de Deus?
-- Quais mandamentos são mais desafiadores para você?
-- Cristo está te capacitando a viver segundo Sua Lei?
-
-### Versículos para estudo
-
-- Êxodo 20:1-17
-- Salmos 119:105, 142
-- Romanos 7:12
-- Mateus 5:17-19`,
-        verseReference: '1 João 5:3',
+        title: 'Cuidando do Templo',
+        description: 'Aprenda a cuidar bem do seu corpo, a morada do Espírito Santo.',
         duration: 15,
-      },
-      {
-        id: 11,
-        title: 'O Sábado',
-        description: 'O sétimo dia da semana é o Sábado do Senhor, memorial da criação e símbolo de redenção.',
-        content: `# O Sábado
-
-## Crença Fundamental #20
-
-**Texto-chave:** "Lembra-te do dia de sábado, para o santificar. Seis dias trabalharás e farás toda a tua obra. Mas o sétimo dia é o sábado do Senhor, teu Deus." - Êxodo 20:8-10
-
-### O que cremos
-
-O beneficente Criador, após os seis dias da Criação, descansou no sétimo dia e instituiu o Sábado para todas as pessoas, como memorial da Criação.
-
-### Pontos principais
-
-1. **Origem do Sábado**
-   - Instituído na Criação
-   - Antes da queda
-   - Para toda a humanidade
-
-2. **Propósito do Sábado**
-   - Memorial da Criação
-   - Tempo com Deus
-   - Renovação física e espiritual
-   - Símbolo de redenção
-
-3. **Observância do Sábado**
-   - Do pôr do sol de sexta ao pôr do sol de sábado
-   - Dia de adoração e comunhão
-   - Descanso das atividades seculares
-   - Alegria e celebração
-
-### Benefícios do Sábado
-
-- Fortalece o relacionamento com Deus
-- Renova as forças
-- Promove comunhão familiar
-- Lembra-nos de que Deus é o Criador
-
-### Para reflexão
-
-- Como você tem guardado o Sábado?
-- O Sábado é um deleite para você?
-- Que mudanças pode fazer para torná-lo mais especial?
-
-### Versículos para estudo
-
-- Gênesis 2:1-3
-- Êxodo 20:8-11
-- Marcos 2:27-28
-- Isaías 58:13-14
-- Hebreus 4:9-11`,
-        verseReference: 'Êxodo 20:8-10',
-        duration: 15,
-      },
-      {
-        id: 12,
-        title: 'Mordomia',
-        description: 'Somos mordomos de Deus, a quem prestamos contas pelo uso do tempo, talentos e recursos.',
-        content: `# Mordomia
-
-## Crença Fundamental #21
-
-**Texto-chave:** "Trazei todos os dízimos à casa do Tesouro, para que haja mantimento na minha casa; e provai-me nisto, diz o Senhor dos Exércitos, se eu não vos abrir as janelas do céu e não derramar sobre vós bênção sem medida." - Malaquias 3:10
-
-### O que cremos
-
-Somos mordomos de Deus, a quem prestamos contas pelo uso apropriado do tempo e oportunidades, capacidades e posses, e das bênçãos da Terra e seus recursos.
-
-### Pontos principais
-
-1. **Conceito de Mordomia**
-   - Tudo pertence a Deus
-   - Somos administradores
-   - Prestaremos contas
-
-2. **Áreas de Mordomia**
-   - Tempo
-   - Talentos e dons
-   - Corpo e saúde
-   - Recursos financeiros
-   - Meio ambiente
-
-3. **Dízimo e Ofertas**
-   - Dízimo: 10% da renda
-   - Pertence a Deus
-   - Sustenta a obra
-   - Promessas de bênçãos
-
-### Princípios da Mordomia
-
-1. Reconhecer que Deus é o dono de tudo
-2. Usar com sabedoria o que Deus nos confiou
-3. Devolver a Deus o que Lhe pertence
-4. Confiar nas promessas divinas
-5. Ser fiel no pouco e no muito
-
-### Para reflexão
-
-- Você se vê como mordomo ou dono?
-- Como está usando o que Deus lhe confiou?
-- Você é fiel nos dízimos e ofertas?
-
-### Versículos para estudo
-
-- Malaquias 3:8-12
-- 1 Crônicas 29:14
-- Mateus 25:14-30
-- Lucas 16:10-11
-- 2 Coríntios 9:6-7`,
-        verseReference: 'Malaquias 3:10',
-        duration: 15,
+        verseReference: '1 Coríntios 6:19-20',
+        cards: [
+          {
+            type: 'content',
+            icon: 'human-handsup',
+            title: 'Seu Corpo é Especial',
+            content: 'Seu corpo não é só carne e ossos. É o templo onde o Espírito Santo habita! Por isso, merece cuidado e respeito.',
+          },
+          {
+            type: 'content',
+            icon: 'food-apple',
+            title: 'Escolhas Saudáveis',
+            content: 'Deus se importa com sua saúde física. Escolher alimentos nutritivos, se exercitar, descansar bem e evitar vícios honra a Deus.',
+            verse: '"Ou não sabeis que o vosso corpo é o templo do Espírito Santo? Glorificai, pois, a Deus no vosso corpo."',
+            verseReference: '1 Coríntios 6:19-20',
+          },
+          {
+            type: 'content',
+            icon: 'heart-pulse',
+            title: 'Saúde Integral',
+            content: 'Saúde não é só física. Cuide também da sua mente (evite pensamentos negativos) e do seu espírito (mantenha comunhão com Deus).',
+            keyPoints: [
+              'Alimente-se de forma saudável',
+              'Pratique exercícios físicos',
+              'Descanse adequadamente',
+              'Evite vícios e excessos',
+              'Cuide da saúde mental e espiritual',
+            ],
+          },
+          {
+            type: 'quiz',
+            questions: [
+              {
+                question: 'Por que devemos cuidar do corpo?',
+                options: [
+                  'Apenas por vaidade',
+                  'Para viver mais tempo',
+                  'Porque é templo do Espírito Santo',
+                  'Não precisamos cuidar',
+                ],
+                correctAnswer: 2,
+              },
+              {
+                question: 'O que inclui saúde integral?',
+                options: [
+                  'Apenas exercícios físicos',
+                  'Somente alimentação',
+                  'Física, mental e espiritual',
+                  'Não importa a saúde',
+                ],
+                correctAnswer: 2,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
