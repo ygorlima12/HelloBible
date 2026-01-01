@@ -84,17 +84,29 @@ Use formatação clara com títulos e parágrafos.`;
 
     lines.forEach(line => {
       const trimmedLine = line.trim();
-      
-      // Detectar títulos (linhas que terminam com : ou estão em **negrito**)
-      if (trimmedLine.endsWith(':') || 
+
+      // Detectar títulos (markdown ### ou **negrito** ou termina com :)
+      if (trimmedLine.startsWith('###') ||
+          trimmedLine.startsWith('##') ||
+          trimmedLine.startsWith('#') ||
+          trimmedLine.endsWith(':') ||
           (trimmedLine.startsWith('**') && trimmedLine.endsWith('**'))) {
         if (currentSection.content.length > 0) {
           sections.push(currentSection);
         }
-        sections.push({
-          type: 'title',
-          content: trimmedLine.replace(/\*\*/g, '').replace(/:$/, '')
-        });
+        // Limpar marcadores de markdown e :
+        let titleText = trimmedLine
+          .replace(/^#+\s*/, '')
+          .replace(/\*\*/g, '')
+          .replace(/:$/, '')
+          .trim();
+
+        if (titleText) {
+          sections.push({
+            type: 'title',
+            content: titleText
+          });
+        }
         currentSection = { type: 'paragraph', content: [] };
       }
       // Detectar listas numeradas
@@ -118,7 +130,7 @@ Use formatação clara com títulos e parágrafos.`;
         currentSection.content.push(trimmedLine.replace(/^[-•]\s*/, ''));
       }
       // Parágrafos normais
-      else {
+      else if (trimmedLine.length > 0) {
         if (currentSection.type !== 'paragraph') {
           if (currentSection.content.length > 0) {
             sections.push(currentSection);
