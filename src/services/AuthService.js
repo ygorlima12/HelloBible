@@ -1,10 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const AUTH_STORAGE_KEY = '@HelloBible:auth';
-const USER_STORAGE_KEY = '@HelloBible:user';
+import supabaseClient from '../config/supabase';
 
 /**
- * Serviço de Autenticação
+ * Serviço de Autenticação usando Supabase
  */
 class AuthService {
   /**
@@ -12,8 +9,8 @@ class AuthService {
    */
   async isAuthenticated() {
     try {
-      const authData = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-      return authData !== null;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      return session !== null;
     } catch (error) {
       console.error('Error checking authentication:', error);
       return false;
@@ -25,8 +22,29 @@ class AuthService {
    */
   async getCurrentUser() {
     try {
-      const userData = await AsyncStorage.getItem(USER_STORAGE_KEY);
-      return userData ? JSON.parse(userData) : null;
+      const { data: { user } } = await supabaseClient.auth.getUser();
+
+      if (!user) return null;
+
+      // Buscar perfil completo do usuário
+      const { data: profile, error } = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: profile?.name || 'Usuário',
+        avatar: profile?.avatar_url || null,
+        createdAt: user.created_at,
+      };
     } catch (error) {
       console.error('Error getting current user:', error);
       return null;
@@ -38,30 +56,36 @@ class AuthService {
    */
   async login(email, password) {
     try {
-      // Buscar usuário salvo
-      const users = await this.getAllUsers();
-      const user = users.find(u => u.email === email && u.password === password);
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (!user) {
+      if (error) {
         return {
           success: false,
-          error: 'Email ou senha incorretos',
+          error: error.message === 'Invalid login credentials'
+            ? 'Email ou senha incorretos'
+            : 'Erro ao fazer login',
         };
       }
 
-      // Salvar sessão
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
-        userId: user.id,
-        email: user.email,
-        loginAt: new Date().toISOString(),
-      }));
-
-      // Salvar dados do usuário atual
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      // Buscar perfil
+      const { data: profile } = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
 
       return {
         success: true,
-        user,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          name: profile?.name || 'Usuário',
+          avatar: profile?.avatar_url || null,
+          createdAt: data.user.created_at,
+        },
       };
     } catch (error) {
       console.error('Error logging in:', error);
@@ -92,41 +116,41 @@ class AuthService {
         };
       }
 
-      // Verificar se email já existe
-      const users = await this.getAllUsers();
-      if (users.find(u => u.email === email)) {
+      // Criar usuário no Supabase Auth
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return {
+            success: false,
+            error: 'Este email já está cadastrado',
+          };
+        }
         return {
           success: false,
-          error: 'Este email já está cadastrado',
+          error: 'Erro ao criar conta',
         };
       }
 
-      // Criar novo usuário
-      const newUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        password, // Em produção, usar hash!
-        createdAt: new Date().toISOString(),
-        avatar: null,
-      };
-
-      // Salvar usuário
-      users.push(newUser);
-      await AsyncStorage.setItem('@HelloBible:users', JSON.stringify(users));
-
-      // Fazer login automático
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
-        userId: newUser.id,
-        email: newUser.email,
-        loginAt: new Date().toISOString(),
-      }));
-
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+      // O trigger no banco de dados criará automaticamente o perfil e stats
 
       return {
         success: true,
-        user: newUser,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          name: name,
+          avatar: null,
+          createdAt: data.user.created_at,
+        },
       };
     } catch (error) {
       console.error('Error registering:', error);
@@ -142,8 +166,11 @@ class AuthService {
    */
   async logout() {
     try {
-      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        console.error('Error logging out:', error);
+        return { success: false };
+      }
       return { success: true };
     } catch (error) {
       console.error('Error logging out:', error);
@@ -156,41 +183,41 @@ class AuthService {
    */
   async updateUser(updates) {
     try {
-      const currentUser = await this.getCurrentUser();
-      if (!currentUser) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+
+      if (!user) {
         return { success: false, error: 'Usuário não encontrado' };
       }
 
-      const updatedUser = { ...currentUser, ...updates };
+      // Atualizar perfil na tabela user_profiles
+      const { data, error } = await supabaseClient
+        .from('user_profiles')
+        .update({
+          name: updates.name,
+          avatar_url: updates.avatar,
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      // Atualizar na lista de usuários
-      const users = await this.getAllUsers();
-      const index = users.findIndex(u => u.id === currentUser.id);
-      if (index !== -1) {
-        users[index] = updatedUser;
-        await AsyncStorage.setItem('@HelloBible:users', JSON.stringify(users));
+      if (error) {
+        console.error('Error updating user:', error);
+        return { success: false, error: 'Erro ao atualizar usuário' };
       }
 
-      // Atualizar usuário atual
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-
-      return { success: true, user: updatedUser };
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: data.name,
+          avatar: data.avatar_url,
+          createdAt: user.created_at,
+        },
+      };
     } catch (error) {
       console.error('Error updating user:', error);
       return { success: false, error: 'Erro ao atualizar usuário' };
-    }
-  }
-
-  /**
-   * Obtém todos os usuários (privado)
-   */
-  async getAllUsers() {
-    try {
-      const users = await AsyncStorage.getItem('@HelloBible:users');
-      return users ? JSON.parse(users) : [];
-    } catch (error) {
-      console.error('Error getting users:', error);
-      return [];
     }
   }
 
@@ -199,17 +226,12 @@ class AuthService {
    */
   async deleteAccount() {
     try {
-      const currentUser = await this.getCurrentUser();
-      if (!currentUser) {
-        return { success: false };
-      }
+      // Nota: Supabase não tem método direto para deletar usuário via client
+      // Precisaria de uma função serverless ou admin API
+      // Por enquanto, vamos apenas fazer logout
 
-      // Remover da lista de usuários
-      const users = await this.getAllUsers();
-      const filtered = users.filter(u => u.id !== currentUser.id);
-      await AsyncStorage.setItem('@HelloBible:users', JSON.stringify(filtered));
-
-      // Fazer logout
+      // TODO: Implementar função serverless para deletar conta
+      // Por enquanto apenas deslogar
       await this.logout();
 
       return { success: true };
@@ -217,6 +239,28 @@ class AuthService {
       console.error('Error deleting account:', error);
       return { success: false };
     }
+  }
+
+  /**
+   * Obtém sessão atual
+   */
+  async getSession() {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      return session;
+    } catch (error) {
+      console.error('Error getting session:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Listener para mudanças de autenticação
+   */
+  onAuthStateChange(callback) {
+    return supabaseClient.auth.onAuthStateChange((event, session) => {
+      callback(event, session);
+    });
   }
 }
 
