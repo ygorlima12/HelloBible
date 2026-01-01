@@ -19,54 +19,56 @@ const StudyToolsScreen = ({ navigation }) => {
     },
     {
       id: 2,
-      title: 'Análise Bíblica IA',
-      description: 'Entenda passagens complexas com explicações detalhadas',
-      icon: 'brain',
+      title: 'Contexto Histórico',
+      description: 'Entenda o contexto histórico e cultural dos versículos',
+      icon: 'history',
       gradient: ['#f59e0b', '#f97316'],
-      screen: 'BiblicalAnalysis',
+      screen: 'HistoricalContext',
       premium: false,
     },
     {
       id: 3,
-      title: 'Gerador de Esboços',
-      description: 'Crie esboços estruturados para seus estudos',
-      icon: 'format-list-bulleted',
+      title: 'Dicionário Bíblico',
+      description: 'Explore palavras originais em hebraico e grego',
+      icon: 'book-alphabet',
       gradient: ['#10b981', '#14b8a6'],
-      screen: 'OutlineGenerator',
+      screen: 'BiblicalDictionary',
       premium: false,
     },
     {
       id: 4,
-      title: 'Pesquisa de Versículos',
-      description: 'Encontre versículos por tema ou palavra-chave',
-      icon: 'magnify',
+      title: 'Análise Bíblica IA',
+      description: 'Entenda passagens complexas com explicações detalhadas',
+      icon: 'brain',
       gradient: ['#8b5cf6', '#7c3aed'],
-      screen: 'VerseSearch',
+      screen: 'BiblicalAnalysis',
       premium: false,
     },
     {
       id: 5,
-      title: 'Comentário Bíblico',
-      description: 'Acesse comentários teológicos de estudiosos',
-      icon: 'comment-text',
+      title: 'Gerador de Esboços',
+      description: 'Crie esboços estruturados para seus estudos',
+      icon: 'format-list-bulleted',
       gradient: ['#ec4899', '#d946ef'],
-      screen: 'Commentary',
-      premium: true,
+      screen: 'OutlineGenerator',
+      premium: false,
     },
     {
       id: 6,
-      title: 'Plano de Estudo',
-      description: 'Crie cronogramas personalizados de leitura',
-      icon: 'calendar-check',
+      title: 'Pesquisa de Versículos',
+      description: 'Encontre versículos por tema ou palavra-chave',
+      icon: 'magnify',
       gradient: ['#06b6d4', '#0891b2'],
-      screen: 'StudyPlan',
-      premium: true,
+      screen: 'VerseSearch',
+      premium: false,
     },
   ];
 
   const handleToolPress = (tool) => {
-    if (tool.screen === 'SermonPreparation') {
-      navigation.navigate('SermonPreparation');
+    if (tool.screen === 'SermonPreparation' ||
+        tool.screen === 'HistoricalContext' ||
+        tool.screen === 'BiblicalDictionary') {
+      navigation.navigate(tool.screen);
     } else {
       // Para as outras ferramentas, mostrar "em breve" ou implementar depois
       alert(`${tool.title} - Em breve!`);

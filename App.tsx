@@ -10,6 +10,8 @@ import ModuleDetailScreen from './src/screens/ModuleDetailScreen';
 import LessonScreen from './src/screens/LessonScreen';
 import StudyToolsScreen from './src/screens/StudyToolsScreen';
 import SermonPreparationScreen from './src/screens/SermonPreparationScreen';
+import HistoricalContextScreen from './src/screens/HistoricalContextScreen';
+import BiblicalDictionaryScreen from './src/screens/BiblicalDictionaryScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import AuthService from './src/services/AuthService';
 import { paperTheme, colors } from './src/theme/colors';
@@ -74,6 +76,8 @@ const App = () => {
             <Stack.Screen name="Lesson" component={LessonScreen} />
             <Stack.Screen name="StudyTools" component={StudyToolsScreen} />
             <Stack.Screen name="SermonPreparation" component={SermonPreparationScreen} />
+            <Stack.Screen name="HistoricalContext" component={HistoricalContextScreen} />
+            <Stack.Screen name="BiblicalDictionary" component={BiblicalDictionaryScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>
