@@ -243,15 +243,20 @@ class GamificationService {
       // Atualizar stats
       const { error: statsError } = await supabaseClient
         .from('user_stats')
-        .upsert({
-          user_id: userId,
-          total_xp: data.xp || 0,
-          level: data.level || 1,
-          lessons_completed: data.lessonsCompleted || 0,
-          current_streak: data.streak || 0,
-          longest_streak: data.longestStreak || 0,
-          last_activity_date: new Date().toISOString().split('T')[0],
-        });
+        .upsert(
+          {
+            user_id: userId,
+            total_xp: data.xp || 0,
+            level: data.level || 1,
+            lessons_completed: data.lessonsCompleted || 0,
+            current_streak: data.streak || 0,
+            longest_streak: data.longestStreak || 0,
+            last_activity_date: new Date().toISOString().split('T')[0],
+          },
+          {
+            onConflict: 'user_id', // Especifica a coluna de conflito para merge
+          }
+        );
 
       if (statsError) {
         console.error('Error syncing stats:', statsError);
