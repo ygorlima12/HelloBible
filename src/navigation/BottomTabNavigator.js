@@ -1,10 +1,13 @@
 import React from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import LinearGradient from 'react-native-linear-gradient';
 import { colors } from '../theme/colors';
 
 import NewHomeScreen from '../screens/NewHomeScreen';
 import ModulesScreen from '../screens/ModulesScreen';
+import BibleScreen from '../screens/BibleScreen';
 import StudyToolsScreen from '../screens/StudyToolsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AIChatFloating from '../components/AIChatFloating';
@@ -23,6 +26,9 @@ const BottomTabNavigator = ({ onLogout }) => {
               iconName = 'book-open-variant';
             } else if (route.name === 'Módulos') {
               iconName = 'school';
+            } else if (route.name === 'Bíblia') {
+              // Botão central customizado - não renderiza ícone padrão
+              return null;
             } else if (route.name === 'Ferramentas') {
               iconName = 'tools';
             } else if (route.name === 'Perfil') {
@@ -71,6 +77,31 @@ const BottomTabNavigator = ({ onLogout }) => {
           }}
         />
         <Tab.Screen
+          name="Bíblia"
+          component={BibleScreen}
+          options={{
+            tabBarLabel: 'Bíblia',
+            tabBarButton: (props) => (
+              <View style={styles.centerButtonContainer}>
+                <TouchableOpacity
+                  {...props}
+                  style={styles.centerButton}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={colors.gradients.primary}
+                    style={styles.centerButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Icon name="book-open-page-variant" size={28} color={colors.white} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
+        <Tab.Screen
           name="Ferramentas"
           component={StudyToolsScreen}
           options={{
@@ -92,5 +123,33 @@ const BottomTabNavigator = ({ onLogout }) => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  centerButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerButton: {
+    top: -20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerButtonGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: colors.primary[600],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+});
 
 export default BottomTabNavigator;
