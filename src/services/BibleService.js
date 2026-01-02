@@ -4,7 +4,8 @@
  * Fonte: github.com/thiagobodruk/biblia
  */
 
-import bibleData from '../data/nvi.json';
+// Usar require para arquivos JSON grandes no React Native
+const bibleData = require('../data/nvi.json');
 
 // Mapeamento de abreviações para nomes em português
 const BOOK_NAMES = {
@@ -86,6 +87,13 @@ const OLD_TESTAMENT_BOOKS = [
 
 class BibleService {
   constructor() {
+    // Verificar se os dados foram carregados
+    if (!bibleData || !Array.isArray(bibleData)) {
+      console.error('Erro ao carregar dados da Bíblia');
+      this.books = [];
+      return;
+    }
+
     // Processar dados da Bíblia e adicionar metadados
     this.books = bibleData.map(book => ({
       abbrev: book.abbrev,
@@ -94,6 +102,8 @@ class BibleService {
       chapters: book.chapters.length,
       data: book.chapters, // Guardar os dados dos capítulos
     }));
+
+    console.log(`✅ Bíblia carregada: ${this.books.length} livros`);
   }
 
   /**
