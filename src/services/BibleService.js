@@ -3,8 +3,77 @@
  * Dados Offline: Bíblia NVI completa (66 livros) em arquivos JSON separados
  * Fonte: github.com/thiagobodruk/biblia
  *
- * OTIMIZAÇÃO: Cada livro é um arquivo separado para melhor performance e lazy loading
+ * IMPORTANTE: React Native requer importações estáticas
  */
+
+// Importar todos os livros estaticamente (React Native não suporta require dinâmico)
+const BOOKS_DATA = {
+  gn: require('../data/books/gn.json'),
+  ex: require('../data/books/ex.json'),
+  lv: require('../data/books/lv.json'),
+  nm: require('../data/books/nm.json'),
+  dt: require('../data/books/dt.json'),
+  js: require('../data/books/js.json'),
+  jz: require('../data/books/jz.json'),
+  rt: require('../data/books/rt.json'),
+  '1sm': require('../data/books/1sm.json'),
+  '2sm': require('../data/books/2sm.json'),
+  '1rs': require('../data/books/1rs.json'),
+  '2rs': require('../data/books/2rs.json'),
+  '1cr': require('../data/books/1cr.json'),
+  '2cr': require('../data/books/2cr.json'),
+  ed: require('../data/books/ed.json'),
+  ne: require('../data/books/ne.json'),
+  et: require('../data/books/et.json'),
+  sl: require('../data/books/sl.json'),
+  pv: require('../data/books/pv.json'),
+  ec: require('../data/books/ec.json'),
+  ct: require('../data/books/ct.json'),
+  is: require('../data/books/is.json'),
+  jr: require('../data/books/jr.json'),
+  lm: require('../data/books/lm.json'),
+  ez: require('../data/books/ez.json'),
+  dn: require('../data/books/dn.json'),
+  os: require('../data/books/os.json'),
+  jl: require('../data/books/jl.json'),
+  am: require('../data/books/am.json'),
+  ob: require('../data/books/ob.json'),
+  jn: require('../data/books/jn.json'),
+  mq: require('../data/books/mq.json'),
+  na: require('../data/books/na.json'),
+  hc: require('../data/books/hc.json'),
+  sf: require('../data/books/sf.json'),
+  ag: require('../data/books/ag.json'),
+  zc: require('../data/books/zc.json'),
+  ml: require('../data/books/ml.json'),
+  mt: require('../data/books/mt.json'),
+  mc: require('../data/books/mc.json'),
+  lc: require('../data/books/lc.json'),
+  jo: require('../data/books/jo.json'),
+  at: require('../data/books/atos.json'),
+  rm: require('../data/books/rm.json'),
+  '1co': require('../data/books/1co.json'),
+  '2co': require('../data/books/2co.json'),
+  gl: require('../data/books/gl.json'),
+  ef: require('../data/books/ef.json'),
+  fp: require('../data/books/fp.json'),
+  cl: require('../data/books/cl.json'),
+  '1ts': require('../data/books/1ts.json'),
+  '2ts': require('../data/books/2ts.json'),
+  '1tm': require('../data/books/1tm.json'),
+  '2tm': require('../data/books/2tm.json'),
+  tt: require('../data/books/tt.json'),
+  fm: require('../data/books/fm.json'),
+  hb: require('../data/books/hb.json'),
+  tg: require('../data/books/tg.json'),
+  '1pe': require('../data/books/1pe.json'),
+  '2pe': require('../data/books/2pe.json'),
+  '1jo': require('../data/books/1jo.json'),
+  '2jo': require('../data/books/2jo.json'),
+  '3jo': require('../data/books/3jo.json'),
+  jd: require('../data/books/jd.json'),
+  ap: require('../data/books/ap.json'),
+};
 
 // Mapeamento de abreviações para nomes em português
 const BOOK_NAMES = {
@@ -25,7 +94,6 @@ const BOOK_NAMES = {
   ed: 'Esdras',
   ne: 'Neemias',
   et: 'Ester',
-  'jó': 'Jó',
   job: 'Jó',
   sl: 'Salmos',
   pv: 'Provérbios',
@@ -53,7 +121,6 @@ const BOOK_NAMES = {
   lc: 'Lucas',
   jo: 'João',
   at: 'Atos',
-  atos: 'Atos',
   rm: 'Romanos',
   '1co': '1 Coríntios',
   '2co': '2 Coríntios',
@@ -81,53 +148,32 @@ const BOOK_NAMES = {
 // Índice para separar Antigo e Novo Testamento
 const OLD_TESTAMENT_BOOKS = [
   'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm',
-  '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'job', 'jó', 'sl', 'pv',
+  '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'job', 'sl', 'pv',
   'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am',
   'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml',
 ];
 
-// Carregar índice de livros (arquivo pequeno com metadados)
-const booksIndex = require('../data/books/index.json');
-
 class BibleService {
   constructor() {
-    // Cache de livros carregados em memória
-    this.loadedBooks = {};
+    // Processar metadados dos livros
+    this.booksMetadata = Object.keys(BOOKS_DATA).map(abbrev => {
+      const bookData = BOOKS_DATA[abbrev];
+      return {
+        abbrev,
+        name: BOOK_NAMES[abbrev] || abbrev.toUpperCase(),
+        testament: OLD_TESTAMENT_BOOKS.includes(abbrev) ? 'VT' : 'NT',
+        chapters: bookData.chapters ? bookData.chapters.length : 0,
+      };
+    });
 
-    // Processar índice de livros
-    this.booksMetadata = booksIndex.map(book => ({
-      abbrev: book.abbrev,
-      name: BOOK_NAMES[book.abbrev] || book.abbrev.toUpperCase(),
-      testament: OLD_TESTAMENT_BOOKS.includes(book.abbrev) ? 'VT' : 'NT',
-      chapters: book.chapters,
-    }));
-
-    console.log(`✅ BibleService iniciado: ${this.booksMetadata.length} livros disponíveis`);
+    console.log(`✅ BibleService iniciado: ${this.booksMetadata.length} livros carregados`);
   }
 
   /**
-   * Carrega um livro específico (lazy loading)
+   * Obtém dados de um livro
    */
-  loadBook(abbrev) {
-    // Se já está carregado, retornar do cache
-    if (this.loadedBooks[abbrev]) {
-      return this.loadedBooks[abbrev];
-    }
-
-    try {
-      // Carregar arquivo do livro
-      const bookData = require(`../data/books/${abbrev}.json`);
-
-      // Guardar no cache
-      this.loadedBooks[abbrev] = bookData;
-
-      console.log(`📖 Livro carregado: ${BOOK_NAMES[abbrev] || abbrev}`);
-
-      return bookData;
-    } catch (error) {
-      console.error(`Erro ao carregar livro ${abbrev}:`, error);
-      return null;
-    }
+  getBookData(abbrev) {
+    return BOOKS_DATA[abbrev] || null;
   }
 
   /**
@@ -180,8 +226,8 @@ class BibleService {
         );
       }
 
-      // Carregar dados do livro (lazy loading)
-      const bookData = this.loadBook(bookAbbrev);
+      // Buscar dados do livro
+      const bookData = this.getBookData(bookAbbrev);
 
       if (!bookData || !bookData.chapters) {
         throw new Error('Erro ao carregar dados do livro');
@@ -216,15 +262,10 @@ class BibleService {
 
   /**
    * Busca versículo específico
-   * @param {string} bookAbbrev - Abreviação do livro
-   * @param {number} chapter - Número do capítulo
-   * @param {number} verseNumber - Número do versículo
-   * @returns {Promise<Object>} Dados do versículo
    */
   async getVerse(bookAbbrev, chapter, verseNumber) {
     try {
       const chapterData = await this.getChapter(bookAbbrev, chapter);
-
       const verse = chapterData.verses.find(v => v.number === verseNumber);
 
       if (!verse) {
@@ -245,8 +286,6 @@ class BibleService {
 
   /**
    * Pesquisa versículos por palavra ou frase
-   * @param {string} query - Termo de pesquisa
-   * @returns {Promise<Array>} Lista de versículos que contêm o termo
    */
   async searchVerses(query) {
     try {
@@ -259,7 +298,7 @@ class BibleService {
 
       // Buscar em todos os livros
       for (const bookMeta of this.booksMetadata) {
-        const bookData = this.loadBook(bookMeta.abbrev);
+        const bookData = this.getBookData(bookMeta.abbrev);
 
         if (!bookData || !bookData.chapters) continue;
 
@@ -304,12 +343,10 @@ class BibleService {
     let totalChapters = 0;
     let totalVerses = 0;
 
-    // Calcular totais a partir dos metadados
     this.booksMetadata.forEach(bookMeta => {
       totalChapters += bookMeta.chapters;
 
-      // Carregar livro para contar versículos
-      const bookData = this.loadBook(bookMeta.abbrev);
+      const bookData = this.getBookData(bookMeta.abbrev);
       if (bookData && bookData.chapters) {
         bookData.chapters.forEach(chapter => {
           totalVerses += chapter.length;
@@ -324,14 +361,6 @@ class BibleService {
       totalChapters,
       totalVerses,
     };
-  }
-
-  /**
-   * Limpa o cache de livros carregados
-   */
-  clearCache() {
-    this.loadedBooks = {};
-    console.log('✅ Cache de livros limpo');
   }
 }
 
