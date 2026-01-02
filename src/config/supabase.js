@@ -8,8 +8,8 @@ import 'react-native-url-polyfill/auto';
 // 3. Vá em Settings > API
 // 4. Copie a URL e a anon key
 
-const SUPABASE_URL = 'https://seu-projeto.supabase.co'; // Substitua pela URL do seu projeto
-const SUPABASE_ANON_KEY = 'sua-anon-key-aqui'; // Substitua pela sua anon key
+const SUPABASE_URL = 'https://ewhdexsrsdbawjutheat.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aGRleHNyc2RiYXdqdXRoZWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMDM2NDcsImV4cCI6MjA4Mjg3OTY0N30.xUambhyHJNywrxRLwwXAk3Y7MKm9508A3pK0rcGnxqI';
 
 // Configuração do cliente Supabase para React Native
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
