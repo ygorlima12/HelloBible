@@ -1,7 +1,12 @@
 /**
  * Serviço para leitura da Bíblia
  * API: A Bíblia Digital (https://www.abibliadigital.com.br/api)
+ *
+ * IMPORTANTE: API tem limite de 20 requisições/hora sem token
+ * Para uso ilimitado, obtenha um token grátis em: https://www.abibliadigital.com.br
  */
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Lista completa de livros da Bíblia
 const BIBLE_BOOKS = [
@@ -77,6 +82,20 @@ const BIBLE_BOOKS = [
 ];
 
 class BibleService {
+  constructor() {
+    // Token de API (opcional, mas recomendado para uso ilimitado)
+    // Obtenha grátis em: https://www.abibliadigital.com.br
+    this.apiToken = null;
+    this.cachePrefix = '@bible_cache_';
+  }
+
+  /**
+   * Define o token da API para requisições ilimitadas
+   */
+  setApiToken(token) {
+    this.apiToken = token;
+  }
+
   /**
    * Obtém lista de todos os livros
    */
@@ -106,28 +125,91 @@ class BibleService {
   }
 
   /**
+   * Salva capítulo no cache local
+   */
+  async cacheChapter(bookAbbrev, chapter, data) {
+    try {
+      const key = `${this.cachePrefix}${bookAbbrev}_${chapter}`;
+      await AsyncStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error caching chapter:', error);
+    }
+  }
+
+  /**
+   * Busca capítulo do cache local
+   */
+  async getCachedChapter(bookAbbrev, chapter) {
+    try {
+      const key = `${this.cachePrefix}${bookAbbrev}_${chapter}`;
+      const cached = await AsyncStorage.getItem(key);
+      return cached ? JSON.parse(cached) : null;
+    } catch (error) {
+      console.error('Error reading cache:', error);
+      return null;
+    }
+  }
+
+  /**
    * Busca capítulo de um livro
    * Usa API pública: A Bíblia Digital
+   * CACHE: Primeiro tenta buscar do cache local para economizar requisições
    */
   async getChapter(bookAbbrev, chapter) {
     try {
+      // 1. Tentar buscar do cache primeiro
+      const cached = await this.getCachedChapter(bookAbbrev, chapter);
+      if (cached) {
+        console.log('Chapter loaded from cache:', bookAbbrev, chapter);
+        return cached;
+      }
+
+      // 2. Se não estiver em cache, buscar da API
       const url = `https://www.abibliadigital.com.br/api/verses/nvi/${bookAbbrev}/${chapter}`;
 
-      const response = await fetch(url);
+      const headers = {};
+      if (this.apiToken) {
+        headers['Authorization'] = `Bearer ${this.apiToken}`;
+      }
+
+      const response = await fetch(url, { headers });
 
       if (!response.ok) {
-        throw new Error('Erro ao buscar capítulo');
+        // Tratamento específico para diferentes erros
+        if (response.status === 429) {
+          throw new Error(
+            'Limite de 20 requisições/hora atingido. ' +
+            'Aguarde 1 hora ou use o cache offline.'
+          );
+        } else if (response.status === 404) {
+          throw new Error('Capítulo não encontrado');
+        } else {
+          throw new Error(`Erro ao buscar capítulo (${response.status})`);
+        }
       }
 
       const data = await response.json();
 
-      return {
+      const result = {
         book: data.book,
         chapter: data.chapter,
         verses: data.verses,
       };
+
+      // 3. Salvar no cache para uso futuro
+      await this.cacheChapter(bookAbbrev, chapter, result);
+
+      return result;
     } catch (error) {
       console.error('Error fetching chapter:', error);
+
+      // Tentar buscar do cache como fallback
+      const cached = await this.getCachedChapter(bookAbbrev, chapter);
+      if (cached) {
+        console.log('Using cached version after error');
+        return cached;
+      }
+
       throw error;
     }
   }
