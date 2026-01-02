@@ -2,15 +2,37 @@
 
 ## Problema Identificado
 
-O erro `TypeError: Cannot convert undefined value to object` está sendo causado por **cache antigo do Metro bundler**. Mesmo depois de corrigir o código, o bundler está servindo a versão antiga que tinha credentials inválidas do Supabase.
+O erro `TypeError: Cannot convert undefined value to object` está sendo causado por **múltiplos níveis de cache antigo**. Mesmo depois de corrigir o código, caches do Metro, Gradle e do app instalado no emulador estão servindo código antigo.
 
-## Solução Rápida (Método 1 - Recomendado)
+## ☢️ SOLUÇÃO NUCLEAR (Método 1 - MAIS EFETIVO)
+
+**Use este método se os outros falharam:**
+
+```bash
+# Execute o script de limpeza NUCLEAR:
+chmod +x NUCLEAR_CLEAN.sh
+./NUCLEAR_CLEAN.sh
+```
+
+Depois de finalizar, **em dois terminais separados**:
+
+**Terminal 1:**
+```bash
+npx react-native start --reset-cache
+```
+
+Aguarde o Metro iniciar completamente, **DEPOIS**:
+
+**Terminal 2:**
+```bash
+npm run android
+```
+
+## Solução Rápida (Método 2)
 
 Execute o script de limpeza automática:
 
 ```bash
-# Pare QUALQUER processo do Metro que esteja rodando (Ctrl+C)
-# Depois execute:
 ./CLEAR_ALL_CACHES.sh
 ```
 
