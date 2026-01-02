@@ -20,6 +20,7 @@ const BibleScreen = ({ navigation }) => {
   const [selectedChapter, setSelectedChapter] = useState(1);
   const [chapterData, setChapterData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showBookSelector, setShowBookSelector] = useState(false);
   const [showChapterSelector, setShowChapterSelector] = useState(false);
   const [fontSize, setFontSize] = useState(16);
@@ -33,12 +34,15 @@ const BibleScreen = ({ navigation }) => {
 
   const loadChapter = async (bookAbbrev, chapter) => {
     setLoading(true);
+    setError(null);
     try {
       const data = await BibleService.getChapter(bookAbbrev, chapter);
       setChapterData(data);
       setSelectedChapter(chapter);
-    } catch (error) {
-      console.error('Error loading chapter:', error);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading chapter:', err);
+      setError(err.message || 'Erro ao carregar capítulo. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -266,6 +270,35 @@ const BibleScreen = ({ navigation }) => {
           <ActivityIndicator size="large" color={colors.primary[600]} />
           <Text style={styles.loadingText}>Carregando...</Text>
         </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Icon name="alert-circle" size={48} color={colors.red[500]} />
+          <Text style={styles.errorTitle}>Erro ao carregar</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          {error.includes('20 requisições') && (
+            <View style={styles.errorHelp}>
+              <Text style={styles.errorHelpTitle}>💡 Dica:</Text>
+              <Text style={styles.errorHelpText}>
+                Os capítulos já lidos ficam salvos no cache e podem ser acessados offline.
+              </Text>
+              <Text style={styles.errorHelpText}>
+                Para uso ilimitado, obtenha um token grátis em: www.abibliadigital.com.br
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => selectedBook && loadChapter(selectedBook.abbrev, selectedChapter)}
+          >
+            <LinearGradient
+              colors={colors.gradients.primary}
+              style={styles.retryButtonGradient}
+            >
+              <Icon name="refresh" size={20} color={colors.white} />
+              <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       ) : chapterData ? (
         <ScrollView
           style={styles.contentScroll}
@@ -401,6 +434,61 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: colors.slate[600],
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.slate[900],
+    marginTop: 16,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: colors.slate[600],
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  errorHelp: {
+    backgroundColor: colors.blue[50],
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.blue[500],
+  },
+  errorHelpTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.blue[900],
+    marginBottom: 8,
+  },
+  errorHelpText: {
+    fontSize: 13,
+    color: colors.blue[700],
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  retryButton: {
+    marginTop: 20,
+  },
+  retryButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.white,
   },
   navigationContainer: {
     flexDirection: 'row',
