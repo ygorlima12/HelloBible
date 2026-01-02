@@ -25,6 +25,7 @@ const BOOKS_DATA = {
   ed: require('../data/books/ed.json'),
   ne: require('../data/books/ne.json'),
   et: require('../data/books/et.json'),
+  job: require('../data/books/job.json'),
   sl: require('../data/books/sl.json'),
   pv: require('../data/books/pv.json'),
   ec: require('../data/books/ec.json'),
