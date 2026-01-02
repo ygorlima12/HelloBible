@@ -1,259 +1,290 @@
 /**
  * Serviço para leitura da Bíblia
- * API: A Bíblia Digital (https://www.abibliadigital.com.br/api)
- *
- * IMPORTANTE: API tem limite de 20 requisições/hora sem token
- * Para uso ilimitado, obtenha um token grátis em: https://www.abibliadigital.com.br
+ * Dados Offline: Bíblia NVI completa (66 livros) em JSON local
+ * Fonte: github.com/thiagobodruk/biblia
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import bibleData from '../data/nvi.json';
 
-// Lista completa de livros da Bíblia
-const BIBLE_BOOKS = [
-  // Antigo Testamento
-  { abbrev: 'gn', name: 'Gênesis', testament: 'VT', chapters: 50 },
-  { abbrev: 'ex', name: 'Êxodo', testament: 'VT', chapters: 40 },
-  { abbrev: 'lv', name: 'Levítico', testament: 'VT', chapters: 27 },
-  { abbrev: 'nm', name: 'Números', testament: 'VT', chapters: 36 },
-  { abbrev: 'dt', name: 'Deuteronômio', testament: 'VT', chapters: 34 },
-  { abbrev: 'js', name: 'Josué', testament: 'VT', chapters: 24 },
-  { abbrev: 'jz', name: 'Juízes', testament: 'VT', chapters: 21 },
-  { abbrev: 'rt', name: 'Rute', testament: 'VT', chapters: 4 },
-  { abbrev: '1sm', name: '1 Samuel', testament: 'VT', chapters: 31 },
-  { abbrev: '2sm', name: '2 Samuel', testament: 'VT', chapters: 24 },
-  { abbrev: '1rs', name: '1 Reis', testament: 'VT', chapters: 22 },
-  { abbrev: '2rs', name: '2 Reis', testament: 'VT', chapters: 25 },
-  { abbrev: '1cr', name: '1 Crônicas', testament: 'VT', chapters: 29 },
-  { abbrev: '2cr', name: '2 Crônicas', testament: 'VT', chapters: 36 },
-  { abbrev: 'ed', name: 'Esdras', testament: 'VT', chapters: 10 },
-  { abbrev: 'ne', name: 'Neemias', testament: 'VT', chapters: 13 },
-  { abbrev: 'et', name: 'Ester', testament: 'VT', chapters: 10 },
-  { abbrev: 'job', name: 'Jó', testament: 'VT', chapters: 42 },
-  { abbrev: 'sl', name: 'Salmos', testament: 'VT', chapters: 150 },
-  { abbrev: 'pv', name: 'Provérbios', testament: 'VT', chapters: 31 },
-  { abbrev: 'ec', name: 'Eclesiastes', testament: 'VT', chapters: 12 },
-  { abbrev: 'ct', name: 'Cânticos', testament: 'VT', chapters: 8 },
-  { abbrev: 'is', name: 'Isaías', testament: 'VT', chapters: 66 },
-  { abbrev: 'jr', name: 'Jeremias', testament: 'VT', chapters: 52 },
-  { abbrev: 'lm', name: 'Lamentações', testament: 'VT', chapters: 5 },
-  { abbrev: 'ez', name: 'Ezequiel', testament: 'VT', chapters: 48 },
-  { abbrev: 'dn', name: 'Daniel', testament: 'VT', chapters: 12 },
-  { abbrev: 'os', name: 'Oséias', testament: 'VT', chapters: 14 },
-  { abbrev: 'jl', name: 'Joel', testament: 'VT', chapters: 3 },
-  { abbrev: 'am', name: 'Amós', testament: 'VT', chapters: 9 },
-  { abbrev: 'ob', name: 'Obadias', testament: 'VT', chapters: 1 },
-  { abbrev: 'jn', name: 'Jonas', testament: 'VT', chapters: 4 },
-  { abbrev: 'mq', name: 'Miquéias', testament: 'VT', chapters: 7 },
-  { abbrev: 'na', name: 'Naum', testament: 'VT', chapters: 3 },
-  { abbrev: 'hc', name: 'Habacuque', testament: 'VT', chapters: 3 },
-  { abbrev: 'sf', name: 'Sofonias', testament: 'VT', chapters: 3 },
-  { abbrev: 'ag', name: 'Ageu', testament: 'VT', chapters: 2 },
-  { abbrev: 'zc', name: 'Zacarias', testament: 'VT', chapters: 14 },
-  { abbrev: 'ml', name: 'Malaquias', testament: 'VT', chapters: 4 },
+// Mapeamento de abreviações para nomes em português
+const BOOK_NAMES = {
+  gn: 'Gênesis',
+  ex: 'Êxodo',
+  lv: 'Levítico',
+  nm: 'Números',
+  dt: 'Deuteronômio',
+  js: 'Josué',
+  jz: 'Juízes',
+  rt: 'Rute',
+  '1sm': '1 Samuel',
+  '2sm': '2 Samuel',
+  '1rs': '1 Reis',
+  '2rs': '2 Reis',
+  '1cr': '1 Crônicas',
+  '2cr': '2 Crônicas',
+  ed: 'Esdras',
+  ne: 'Neemias',
+  et: 'Ester',
+  job: 'Jó',
+  sl: 'Salmos',
+  pv: 'Provérbios',
+  ec: 'Eclesiastes',
+  ct: 'Cânticos',
+  is: 'Isaías',
+  jr: 'Jeremias',
+  lm: 'Lamentações',
+  ez: 'Ezequiel',
+  dn: 'Daniel',
+  os: 'Oséias',
+  jl: 'Joel',
+  am: 'Amós',
+  ob: 'Obadias',
+  jn: 'Jonas',
+  mq: 'Miquéias',
+  na: 'Naum',
+  hc: 'Habacuque',
+  sf: 'Sofonias',
+  ag: 'Ageu',
+  zc: 'Zacarias',
+  ml: 'Malaquias',
+  mt: 'Mateus',
+  mc: 'Marcos',
+  lc: 'Lucas',
+  jo: 'João',
+  at: 'Atos',
+  rm: 'Romanos',
+  '1co': '1 Coríntios',
+  '2co': '2 Coríntios',
+  gl: 'Gálatas',
+  ef: 'Efésios',
+  fp: 'Filipenses',
+  cl: 'Colossenses',
+  '1ts': '1 Tessalonicenses',
+  '2ts': '2 Tessalonicenses',
+  '1tm': '1 Timóteo',
+  '2tm': '2 Timóteo',
+  tt: 'Tito',
+  fm: 'Filemom',
+  hb: 'Hebreus',
+  tg: 'Tiago',
+  '1pe': '1 Pedro',
+  '2pe': '2 Pedro',
+  '1jo': '1 João',
+  '2jo': '2 João',
+  '3jo': '3 João',
+  jd: 'Judas',
+  ap: 'Apocalipse',
+};
 
-  // Novo Testamento
-  { abbrev: 'mt', name: 'Mateus', testament: 'NT', chapters: 28 },
-  { abbrev: 'mc', name: 'Marcos', testament: 'NT', chapters: 16 },
-  { abbrev: 'lc', name: 'Lucas', testament: 'NT', chapters: 24 },
-  { abbrev: 'jo', name: 'João', testament: 'NT', chapters: 21 },
-  { abbrev: 'at', name: 'Atos', testament: 'NT', chapters: 28 },
-  { abbrev: 'rm', name: 'Romanos', testament: 'NT', chapters: 16 },
-  { abbrev: '1co', name: '1 Coríntios', testament: 'NT', chapters: 16 },
-  { abbrev: '2co', name: '2 Coríntios', testament: 'NT', chapters: 13 },
-  { abbrev: 'gl', name: 'Gálatas', testament: 'NT', chapters: 6 },
-  { abbrev: 'ef', name: 'Efésios', testament: 'NT', chapters: 6 },
-  { abbrev: 'fp', name: 'Filipenses', testament: 'NT', chapters: 4 },
-  { abbrev: 'cl', name: 'Colossenses', testament: 'NT', chapters: 4 },
-  { abbrev: '1ts', name: '1 Tessalonicenses', testament: 'NT', chapters: 5 },
-  { abbrev: '2ts', name: '2 Tessalonicenses', testament: 'NT', chapters: 3 },
-  { abbrev: '1tm', name: '1 Timóteo', testament: 'NT', chapters: 6 },
-  { abbrev: '2tm', name: '2 Timóteo', testament: 'NT', chapters: 4 },
-  { abbrev: 'tt', name: 'Tito', testament: 'NT', chapters: 3 },
-  { abbrev: 'fm', name: 'Filemom', testament: 'NT', chapters: 1 },
-  { abbrev: 'hb', name: 'Hebreus', testament: 'NT', chapters: 13 },
-  { abbrev: 'tg', name: 'Tiago', testament: 'NT', chapters: 5 },
-  { abbrev: '1pe', name: '1 Pedro', testament: 'NT', chapters: 5 },
-  { abbrev: '2pe', name: '2 Pedro', testament: 'NT', chapters: 3 },
-  { abbrev: '1jo', name: '1 João', testament: 'NT', chapters: 5 },
-  { abbrev: '2jo', name: '2 João', testament: 'NT', chapters: 1 },
-  { abbrev: '3jo', name: '3 João', testament: 'NT', chapters: 1 },
-  { abbrev: 'jd', name: 'Judas', testament: 'NT', chapters: 1 },
-  { abbrev: 'ap', name: 'Apocalipse', testament: 'NT', chapters: 22 },
+// Índice para separar Antigo e Novo Testamento
+const OLD_TESTAMENT_BOOKS = [
+  'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm',
+  '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'job', 'sl', 'pv',
+  'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am',
+  'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml',
 ];
 
 class BibleService {
   constructor() {
-    // Token de API (opcional, mas recomendado para uso ilimitado)
-    // Obtenha grátis em: https://www.abibliadigital.com.br
-    this.apiToken = null;
-    this.cachePrefix = '@bible_cache_';
-  }
-
-  /**
-   * Define o token da API para requisições ilimitadas
-   */
-  setApiToken(token) {
-    this.apiToken = token;
+    // Processar dados da Bíblia e adicionar metadados
+    this.books = bibleData.map(book => ({
+      abbrev: book.abbrev,
+      name: BOOK_NAMES[book.abbrev] || book.abbrev.toUpperCase(),
+      testament: OLD_TESTAMENT_BOOKS.includes(book.abbrev) ? 'VT' : 'NT',
+      chapters: book.chapters.length,
+      data: book.chapters, // Guardar os dados dos capítulos
+    }));
   }
 
   /**
    * Obtém lista de todos os livros
    */
   getAllBooks() {
-    return BIBLE_BOOKS;
+    return this.books.map(({ abbrev, name, testament, chapters }) => ({
+      abbrev,
+      name,
+      testament,
+      chapters,
+    }));
   }
 
   /**
    * Obtém livros do Antigo Testamento
    */
   getOldTestamentBooks() {
-    return BIBLE_BOOKS.filter(book => book.testament === 'VT');
+    return this.getAllBooks().filter(book => book.testament === 'VT');
   }
 
   /**
    * Obtém livros do Novo Testamento
    */
   getNewTestamentBooks() {
-    return BIBLE_BOOKS.filter(book => book.testament === 'NT');
+    return this.getAllBooks().filter(book => book.testament === 'NT');
   }
 
   /**
    * Busca um livro por abreviação
    */
   getBookByAbbrev(abbrev) {
-    return BIBLE_BOOKS.find(book => book.abbrev === abbrev);
+    const book = this.books.find(b => b.abbrev === abbrev);
+    if (!book) return null;
+
+    return {
+      abbrev: book.abbrev,
+      name: book.name,
+      testament: book.testament,
+      chapters: book.chapters,
+    };
   }
 
   /**
-   * Salva capítulo no cache local
-   */
-  async cacheChapter(bookAbbrev, chapter, data) {
-    try {
-      const key = `${this.cachePrefix}${bookAbbrev}_${chapter}`;
-      await AsyncStorage.setItem(key, JSON.stringify(data));
-    } catch (error) {
-      console.error('Error caching chapter:', error);
-    }
-  }
-
-  /**
-   * Busca capítulo do cache local
-   */
-  async getCachedChapter(bookAbbrev, chapter) {
-    try {
-      const key = `${this.cachePrefix}${bookAbbrev}_${chapter}`;
-      const cached = await AsyncStorage.getItem(key);
-      return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-      console.error('Error reading cache:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Busca capítulo de um livro
-   * Usa API pública: A Bíblia Digital
-   * CACHE: Primeiro tenta buscar do cache local para economizar requisições
+   * Busca capítulo de um livro (100% OFFLINE)
+   * @param {string} bookAbbrev - Abreviação do livro (ex: 'gn', 'mt')
+   * @param {number} chapter - Número do capítulo (começando em 1)
+   * @returns {Promise<Object>} Dados do capítulo com versículos
    */
   async getChapter(bookAbbrev, chapter) {
     try {
-      // 1. Tentar buscar do cache primeiro
-      const cached = await this.getCachedChapter(bookAbbrev, chapter);
-      if (cached) {
-        console.log('Chapter loaded from cache:', bookAbbrev, chapter);
-        return cached;
+      const book = this.books.find(b => b.abbrev === bookAbbrev);
+
+      if (!book) {
+        throw new Error(`Livro não encontrado: ${bookAbbrev}`);
       }
 
-      // 2. Se não estiver em cache, buscar da API
-      const url = `https://www.abibliadigital.com.br/api/verses/nvi/${bookAbbrev}/${chapter}`;
-
-      const headers = {};
-      if (this.apiToken) {
-        headers['Authorization'] = `Bearer ${this.apiToken}`;
+      // Validar número do capítulo
+      if (chapter < 1 || chapter > book.chapters) {
+        throw new Error(
+          `Capítulo inválido. ${book.name} tem ${book.chapters} capítulos.`
+        );
       }
 
-      const response = await fetch(url, { headers });
+      // Buscar versículos do capítulo (índice começa em 0)
+      const verses = book.data[chapter - 1];
 
-      if (!response.ok) {
-        // Tratamento específico para diferentes erros
-        if (response.status === 429) {
-          throw new Error(
-            'Limite de 20 requisições/hora atingido. ' +
-            'Aguarde 1 hora ou use o cache offline.'
-          );
-        } else if (response.status === 404) {
-          throw new Error('Capítulo não encontrado');
-        } else {
-          throw new Error(`Erro ao buscar capítulo (${response.status})`);
-        }
+      if (!verses || verses.length === 0) {
+        throw new Error('Capítulo sem dados');
       }
 
-      const data = await response.json();
+      // Formatar versículos com números
+      const formattedVerses = verses.map((text, index) => ({
+        number: index + 1,
+        text: text,
+      }));
 
-      const result = {
-        book: data.book,
-        chapter: data.chapter,
-        verses: data.verses,
+      return {
+        book: {
+          abbrev: book.abbrev,
+          name: book.name,
+        },
+        chapter: chapter,
+        verses: formattedVerses,
       };
-
-      // 3. Salvar no cache para uso futuro
-      await this.cacheChapter(bookAbbrev, chapter, result);
-
-      return result;
     } catch (error) {
-      console.error('Error fetching chapter:', error);
-
-      // Tentar buscar do cache como fallback
-      const cached = await this.getCachedChapter(bookAbbrev, chapter);
-      if (cached) {
-        console.log('Using cached version after error');
-        return cached;
-      }
-
+      console.error('Error getting chapter:', error);
       throw error;
     }
   }
 
   /**
    * Busca versículo específico
+   * @param {string} bookAbbrev - Abreviação do livro
+   * @param {number} chapter - Número do capítulo
+   * @param {number} verseNumber - Número do versículo
+   * @returns {Promise<Object>} Dados do versículo
    */
-  async getVerse(bookAbbrev, chapter, verse) {
+  async getVerse(bookAbbrev, chapter, verseNumber) {
     try {
-      const url = `https://www.abibliadigital.com.br/api/verses/nvi/${bookAbbrev}/${chapter}/${verse}`;
+      const chapterData = await this.getChapter(bookAbbrev, chapter);
 
-      const response = await fetch(url);
+      const verse = chapterData.verses.find(v => v.number === verseNumber);
 
-      if (!response.ok) {
-        throw new Error('Erro ao buscar versículo');
+      if (!verse) {
+        throw new Error('Versículo não encontrado');
       }
 
-      const data = await response.json();
-      return data;
+      return {
+        book: chapterData.book,
+        chapter: chapter,
+        verse: verse.number,
+        text: verse.text,
+      };
     } catch (error) {
-      console.error('Error fetching verse:', error);
+      console.error('Error getting verse:', error);
       throw error;
     }
   }
 
   /**
-   * Pesquisa versículos por palavra
+   * Pesquisa versículos por palavra ou frase
+   * @param {string} query - Termo de pesquisa
+   * @returns {Promise<Array>} Lista de versículos que contêm o termo
    */
   async searchVerses(query) {
     try {
-      const url = `https://www.abibliadigital.com.br/api/verses/nvi/search/${encodeURIComponent(query)}`;
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error('Erro ao pesquisar');
+      if (!query || query.trim().length < 3) {
+        return [];
       }
 
-      const data = await response.json();
-      return data.verses || [];
+      const searchTerm = query.toLowerCase().trim();
+      const results = [];
+
+      // Buscar em todos os livros
+      for (const book of this.books) {
+        // Buscar em todos os capítulos
+        for (let chapterIndex = 0; chapterIndex < book.data.length; chapterIndex++) {
+          const verses = book.data[chapterIndex];
+
+          // Buscar em todos os versículos
+          for (let verseIndex = 0; verseIndex < verses.length; verseIndex++) {
+            const verseText = verses[verseIndex];
+
+            if (verseText.toLowerCase().includes(searchTerm)) {
+              results.push({
+                book: {
+                  abbrev: book.abbrev,
+                  name: book.name,
+                },
+                chapter: chapterIndex + 1,
+                verse: verseIndex + 1,
+                text: verseText,
+              });
+            }
+          }
+        }
+      }
+
+      return results;
     } catch (error) {
       console.error('Error searching verses:', error);
       return [];
     }
+  }
+
+  /**
+   * Retorna estatísticas da Bíblia
+   */
+  getStats() {
+    const totalBooks = this.books.length;
+    const oldTestamentBooks = this.getOldTestamentBooks().length;
+    const newTestamentBooks = this.getNewTestamentBooks().length;
+
+    let totalChapters = 0;
+    let totalVerses = 0;
+
+    this.books.forEach(book => {
+      totalChapters += book.chapters;
+      book.data.forEach(chapter => {
+        totalVerses += chapter.length;
+      });
+    });
+
+    return {
+      totalBooks,
+      oldTestamentBooks,
+      newTestamentBooks,
+      totalChapters,
+      totalVerses,
+    };
   }
 }
 
