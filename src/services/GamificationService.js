@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import supabaseClient from '../config/supabase';
 
 const XP_STORAGE_KEY = '@HelloBible:gamification';
 const STREAK_STORAGE_KEY = '@HelloBible:streak';
 
 /**
- * Sistema de Gamificação
+ * Sistema de Gamificação com Supabase
  * XP, Níveis, Badges, Streaks
  */
 
@@ -100,53 +101,191 @@ const ACHIEVEMENTS = {
 
 class GamificationService {
   /**
-   * Inicializa dados de gamificação
+   * Verifica se usuário está autenticado
    */
-  async initialize() {
-    const data = await this.getData();
-    if (!data.initialized) {
-      const initialData = {
-        initialized: true,
-        xp: 0,
-        level: 1,
-        achievements: [],
-        lessonsCompleted: 0,
-        dailyLessons: 0,
-        lastStudyDate: null,
-        streak: 0,
-        longestStreak: 0,
-        quizScores: [],
-      };
-      await this.saveData(initialData);
-      return initialData;
+  async isAuthenticated() {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      return session !== null;
+    } catch (error) {
+      return false;
     }
-    return data;
   }
 
   /**
-   * Obtém dados de gamificação
+   * Obtém user ID do Supabase
    */
-  async getData() {
+  async getUserId() {
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      return user?.id;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Inicializa dados de gamificação
+   */
+  async initialize() {
+    const isAuthed = await this.isAuthenticated();
+
+    if (isAuthed) {
+      // Usuário logado - sincronizar com Supabase
+      const userId = await this.getUserId();
+      if (!userId) return this.getDefaultData();
+
+      try {
+        // Buscar stats do Supabase
+        const { data: stats, error } = await supabaseClient
+          .from('user_stats')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching stats:', error);
+          return this.getDefaultData();
+        }
+
+        // Buscar conquistas
+        const { data: achievements } = await supabaseClient
+          .from('user_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId);
+
+        const achievementIds = achievements?.map(a => a.achievement_id) || [];
+
+        const data = {
+          initialized: true,
+          xp: stats.total_xp || 0,
+          level: stats.level || 1,
+          achievements: achievementIds,
+          lessonsCompleted: stats.lessons_completed || 0,
+          dailyLessons: 0, // Calculado localmente
+          lastStudyDate: stats.last_activity_date,
+          streak: stats.current_streak || 0,
+          longestStreak: stats.longest_streak || 0,
+          quizScores: [],
+        };
+
+        // Salvar cache local
+        await this.saveDataLocally(data);
+        return data;
+      } catch (error) {
+        console.error('Error initializing from Supabase:', error);
+        return this.getDataLocally();
+      }
+    } else {
+      // Usuário não logado - usar AsyncStorage
+      const data = await this.getDataLocally();
+      if (!data.initialized) {
+        const initialData = this.getDefaultData();
+        await this.saveDataLocally(initialData);
+        return initialData;
+      }
+      return data;
+    }
+  }
+
+  /**
+   * Dados padrão
+   */
+  getDefaultData() {
+    return {
+      initialized: true,
+      xp: 0,
+      level: 1,
+      achievements: [],
+      lessonsCompleted: 0,
+      dailyLessons: 0,
+      lastStudyDate: null,
+      streak: 0,
+      longestStreak: 0,
+      quizScores: [],
+    };
+  }
+
+  /**
+   * Obtém dados localmente (cache)
+   */
+  async getDataLocally() {
     try {
       const data = await AsyncStorage.getItem(XP_STORAGE_KEY);
       return data ? JSON.parse(data) : {};
     } catch (error) {
-      console.error('Error getting gamification data:', error);
+      console.error('Error getting local data:', error);
       return {};
     }
   }
 
   /**
-   * Salva dados de gamificação
+   * Salva dados localmente (cache)
    */
-  async saveData(data) {
+  async saveDataLocally(data) {
     try {
       await AsyncStorage.setItem(XP_STORAGE_KEY, JSON.stringify(data));
       return true;
     } catch (error) {
-      console.error('Error saving gamification data:', error);
+      console.error('Error saving local data:', error);
       return false;
     }
+  }
+
+  /**
+   * Sincroniza dados com Supabase
+   */
+  async syncWithSupabase(data) {
+    const userId = await this.getUserId();
+    if (!userId) return false;
+
+    try {
+      // Atualizar stats
+      const { error: statsError } = await supabaseClient
+        .from('user_stats')
+        .upsert({
+          user_id: userId,
+          total_xp: data.xp || 0,
+          level: data.level || 1,
+          lessons_completed: data.lessonsCompleted || 0,
+          current_streak: data.streak || 0,
+          longest_streak: data.longestStreak || 0,
+          last_activity_date: new Date().toISOString().split('T')[0],
+        });
+
+      if (statsError) {
+        console.error('Error syncing stats:', statsError);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error syncing with Supabase:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Obtém dados (público)
+   */
+  async getData() {
+    return await this.initialize();
+  }
+
+  /**
+   * Salva dados (público)
+   */
+  async saveData(data) {
+    // Salvar localmente
+    await this.saveDataLocally(data);
+
+    // Sincronizar com Supabase se autenticado
+    const isAuthed = await this.isAuthenticated();
+    if (isAuthed) {
+      await this.syncWithSupabase(data);
+    }
+
+    return true;
   }
 
   /**
@@ -199,34 +338,20 @@ class GamificationService {
     const currentLevelConfig = LEVEL_CONFIG.find(l => l.level === currentLevel);
     const nextLevelConfig = LEVEL_CONFIG.find(l => l.level === currentLevel + 1);
 
-    if (!nextLevelConfig) {
-      return {
-        level: currentLevel,
-        title: currentLevelConfig.title,
-        currentXP,
-        xpForCurrentLevel: currentLevelConfig.xpRequired,
-        xpForNextLevel: null,
-        progress: 1,
-        isMaxLevel: true,
-      };
-    }
-
-    const xpForCurrentLevel = currentLevelConfig.xpRequired;
-    const xpForNextLevel = nextLevelConfig.xpRequired;
-    const xpInLevel = currentXP - xpForCurrentLevel;
+    const xpForCurrentLevel = currentLevelConfig?.xpRequired || 0;
+    const xpForNextLevel = nextLevelConfig?.xpRequired || 0;
+    const xpProgress = currentXP - xpForCurrentLevel;
     const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-    const progress = xpInLevel / xpNeeded;
+    const progress = xpNeeded > 0 ? (xpProgress / xpNeeded) * 100 : 100;
 
     return {
-      level: currentLevel,
-      title: currentLevelConfig.title,
+      currentLevel,
       currentXP,
-      xpForCurrentLevel,
       xpForNextLevel,
-      xpInLevel,
       xpNeeded,
-      progress,
-      isMaxLevel: false,
+      progress: Math.min(progress, 100),
+      title: currentLevelConfig?.title || 'Iniciante',
+      isMaxLevel: currentLevel >= LEVEL_CONFIG.length,
     };
   }
 
@@ -236,50 +361,56 @@ class GamificationService {
   async completeLesson(quizScore = 0) {
     const data = await this.getData();
 
-    // XP base por lição
-    let xpGained = 50;
-
-    // Bonus por quiz perfeito
-    if (quizScore === 100) {
-      xpGained += 25;
-    } else if (quizScore >= 80) {
-      xpGained += 15;
-    }
-
-    // Atualizar contadores
+    // Incrementar contadores
     data.lessonsCompleted = (data.lessonsCompleted || 0) + 1;
     data.dailyLessons = (data.dailyLessons || 0) + 1;
 
     // Atualizar streak
     const today = new Date().toDateString();
-    if (data.lastStudyDate !== today) {
+    const lastStudy = data.lastStudyDate ? new Date(data.lastStudyDate).toDateString() : null;
+
+    if (lastStudy !== today) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
 
-      if (data.lastStudyDate === yesterday.toDateString()) {
+      if (lastStudy === yesterdayStr) {
         data.streak = (data.streak || 0) + 1;
-      } else if (!data.lastStudyDate) {
-        data.streak = 1;
       } else {
-        data.streak = 1; // Reset streak
+        data.streak = 1;
       }
 
+      data.longestStreak = Math.max(data.longestStreak || 0, data.streak);
       data.lastStudyDate = today;
       data.dailyLessons = 1;
-
-      if (data.streak > (data.longestStreak || 0)) {
-        data.longestStreak = data.streak;
-      }
     }
 
-    // Salvar quiz score
-    if (!data.quizScores) data.quizScores = [];
-    data.quizScores.push(quizScore);
+    // Salvar pontuação
+    data.quizScores = data.quizScores || [];
+    data.quizScores.push({
+      score: quizScore,
+      date: new Date().toISOString(),
+    });
+
+    // XP base
+    let xpEarned = 50;
+
+    // Bônus de pontuação perfeita
+    if (quizScore === 100) {
+      xpEarned += 25;
+    }
+
+    // Bônus de streak
+    if (data.streak >= 7) {
+      xpEarned += 15;
+    } else if (data.streak >= 3) {
+      xpEarned += 10;
+    }
 
     await this.saveData(data);
 
     // Adicionar XP
-    const xpResult = await this.addXP(xpGained, 'Lição completa');
+    const xpResult = await this.addXP(xpEarned, 'Lição completa');
 
     // Verificar conquistas
     const newAchievements = await this.checkAchievements(data);
@@ -288,7 +419,6 @@ class GamificationService {
       ...xpResult,
       newAchievements,
       streak: data.streak,
-      dailyLessons: data.dailyLessons,
     };
   }
 
@@ -296,75 +426,77 @@ class GamificationService {
    * Verifica e desbloqueia conquistas
    */
   async checkAchievements(data) {
-    const unlockedAchievements = data.achievements || [];
     const newAchievements = [];
+    const currentAchievements = data.achievements || [];
 
     // Primeira lição
-    if (data.lessonsCompleted === 1 && !unlockedAchievements.includes('firstLesson')) {
-      newAchievements.push(ACHIEVEMENTS.firstLesson);
-      unlockedAchievements.push('firstLesson');
-      await this.addXP(ACHIEVEMENTS.firstLesson.xp, 'Conquista: Primeiro Passo');
+    if (data.lessonsCompleted >= 1 && !currentAchievements.includes('firstLesson')) {
+      newAchievements.push('firstLesson');
     }
 
     // Streaks
-    if (data.streak >= 3 && !unlockedAchievements.includes('streak3')) {
-      newAchievements.push(ACHIEVEMENTS.streak3);
-      unlockedAchievements.push('streak3');
-      await this.addXP(ACHIEVEMENTS.streak3.xp, 'Conquista: Consistente');
+    if (data.streak >= 30 && !currentAchievements.includes('streak30')) {
+      newAchievements.push('streak30');
+    } else if (data.streak >= 7 && !currentAchievements.includes('streak7')) {
+      newAchievements.push('streak7');
+    } else if (data.streak >= 3 && !currentAchievements.includes('streak3')) {
+      newAchievements.push('streak3');
     }
 
-    if (data.streak >= 7 && !unlockedAchievements.includes('streak7')) {
-      newAchievements.push(ACHIEVEMENTS.streak7);
-      unlockedAchievements.push('streak7');
-      await this.addXP(ACHIEVEMENTS.streak7.xp, 'Conquista: Dedicado');
+    // Estudioso
+    if (data.lessonsCompleted >= 10 && !currentAchievements.includes('scholar')) {
+      newAchievements.push('scholar');
     }
 
-    if (data.streak >= 30 && !unlockedAchievements.includes('streak30')) {
-      newAchievements.push(ACHIEVEMENTS.streak30);
-      unlockedAchievements.push('streak30');
-      await this.addXP(ACHIEVEMENTS.streak30.xp, 'Conquista: Imparável');
+    // Veloz (3 lições em um dia)
+    if (data.dailyLessons >= 3 && !currentAchievements.includes('speedRunner')) {
+      newAchievements.push('speedRunner');
     }
 
-    // 10 lições
-    if (data.lessonsCompleted >= 10 && !unlockedAchievements.includes('scholar')) {
-      newAchievements.push(ACHIEVEMENTS.scholar);
-      unlockedAchievements.push('scholar');
-      await this.addXP(ACHIEVEMENTS.scholar.xp, 'Conquista: Estudioso');
-    }
-
-    // 3 lições em um dia
-    if (data.dailyLessons >= 3 && !unlockedAchievements.includes('speedRunner')) {
-      newAchievements.push(ACHIEVEMENTS.speedRunner);
-      unlockedAchievements.push('speedRunner');
-      await this.addXP(ACHIEVEMENTS.speedRunner.xp, 'Conquista: Veloz');
-    }
-
-    // Quiz perfeito
-    const lastQuiz = data.quizScores?.[data.quizScores.length - 1];
-    if (lastQuiz === 100 && !unlockedAchievements.includes('allPerfect')) {
-      newAchievements.push(ACHIEVEMENTS.allPerfect);
-      unlockedAchievements.push('allPerfect');
-      await this.addXP(ACHIEVEMENTS.allPerfect.xp, 'Conquista: Perfeccionista');
-    }
-
+    // Desbloquear novas conquistas
     if (newAchievements.length > 0) {
-      data.achievements = unlockedAchievements;
+      data.achievements = [...currentAchievements, ...newAchievements];
       await this.saveData(data);
+
+      // Sincronizar conquistas com Supabase
+      const userId = await this.getUserId();
+      if (userId) {
+        for (const achievementId of newAchievements) {
+          await supabaseClient
+            .from('user_achievements')
+            .insert({
+              user_id: userId,
+              achievement_id: achievementId,
+            })
+            .select();
+        }
+      }
+
+      // Adicionar XP das conquistas
+      for (const achievementId of newAchievements) {
+        const achievement = ACHIEVEMENTS[achievementId];
+        if (achievement?.xp) {
+          await this.addXP(achievement.xp, `Conquista: ${achievement.title}`);
+        }
+      }
     }
 
-    return newAchievements;
+    return newAchievements.map(id => ({
+      ...ACHIEVEMENTS[id],
+      unlocked: true,
+    }));
   }
 
   /**
-   * Obtém todas as conquistas com status
+   * Obtém todas as conquistas
    */
   async getAllAchievements() {
     const data = await this.getData();
-    const unlocked = data.achievements || [];
+    const unlockedIds = data.achievements || [];
 
     return Object.values(ACHIEVEMENTS).map(achievement => ({
       ...achievement,
-      unlocked: unlocked.includes(achievement.id),
+      unlocked: unlockedIds.includes(achievement.id),
     }));
   }
 
@@ -376,27 +508,25 @@ class GamificationService {
     const levelInfo = await this.getLevelInfo();
 
     return {
-      ...levelInfo,
       totalXP: data.xp || 0,
+      level: data.level || 1,
+      levelTitle: levelInfo.title,
+      levelProgress: levelInfo.progress,
       lessonsCompleted: data.lessonsCompleted || 0,
       streak: data.streak || 0,
       longestStreak: data.longestStreak || 0,
-      achievementsUnlocked: (data.achievements || []).length,
-      totalAchievements: Object.keys(ACHIEVEMENTS).length,
-      averageQuizScore: data.quizScores?.length > 0
-        ? Math.round(data.quizScores.reduce((a, b) => a + b, 0) / data.quizScores.length)
-        : 0,
+      achievements: (data.achievements || []).length,
     };
   }
 
   /**
-   * Reset (para testes)
+   * Reseta dados (dev only)
    */
   async reset() {
     await AsyncStorage.removeItem(XP_STORAGE_KEY);
+    await AsyncStorage.removeItem(STREAK_STORAGE_KEY);
     return this.initialize();
   }
 }
 
 export default new GamificationService();
-export { ACHIEVEMENTS, LEVEL_CONFIG };
