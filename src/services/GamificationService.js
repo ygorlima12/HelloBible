@@ -521,6 +521,8 @@ class GamificationService {
       streak: data.streak || 0,
       longestStreak: data.longestStreak || 0,
       achievements: (data.achievements || []).length,
+      lastActivityDate: data.lastStudyDate,
+      dailyLessons: data.dailyLessons || 0,
     };
   }
 
