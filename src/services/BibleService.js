@@ -3,78 +3,8 @@
  * Dados Offline: Bíblia NVI completa (66 livros) em arquivos JSON separados
  * Fonte: github.com/thiagobodruk/biblia
  *
- * IMPORTANTE: React Native requer importações estáticas
+ * OTIMIZAÇÃO: Lazy loading - carrega livros apenas quando necessário
  */
-
-// Importar todos os livros estaticamente (React Native não suporta require dinâmico)
-const BOOKS_DATA = {
-  gn: require('../data/books/gn.json'),
-  ex: require('../data/books/ex.json'),
-  lv: require('../data/books/lv.json'),
-  nm: require('../data/books/nm.json'),
-  dt: require('../data/books/dt.json'),
-  js: require('../data/books/js.json'),
-  jz: require('../data/books/jz.json'),
-  rt: require('../data/books/rt.json'),
-  '1sm': require('../data/books/1sm.json'),
-  '2sm': require('../data/books/2sm.json'),
-  '1rs': require('../data/books/1rs.json'),
-  '2rs': require('../data/books/2rs.json'),
-  '1cr': require('../data/books/1cr.json'),
-  '2cr': require('../data/books/2cr.json'),
-  ed: require('../data/books/ed.json'),
-  ne: require('../data/books/ne.json'),
-  et: require('../data/books/et.json'),
-  job: require('../data/books/job.json'),
-  sl: require('../data/books/sl.json'),
-  pv: require('../data/books/pv.json'),
-  ec: require('../data/books/ec.json'),
-  ct: require('../data/books/ct.json'),
-  is: require('../data/books/is.json'),
-  jr: require('../data/books/jr.json'),
-  lm: require('../data/books/lm.json'),
-  ez: require('../data/books/ez.json'),
-  dn: require('../data/books/dn.json'),
-  os: require('../data/books/os.json'),
-  jl: require('../data/books/jl.json'),
-  am: require('../data/books/am.json'),
-  ob: require('../data/books/ob.json'),
-  jn: require('../data/books/jn.json'),
-  mq: require('../data/books/mq.json'),
-  na: require('../data/books/na.json'),
-  hc: require('../data/books/hc.json'),
-  sf: require('../data/books/sf.json'),
-  ag: require('../data/books/ag.json'),
-  zc: require('../data/books/zc.json'),
-  ml: require('../data/books/ml.json'),
-  mt: require('../data/books/mt.json'),
-  mc: require('../data/books/mc.json'),
-  lc: require('../data/books/lc.json'),
-  jo: require('../data/books/jo.json'),
-  at: require('../data/books/atos.json'),
-  rm: require('../data/books/rm.json'),
-  '1co': require('../data/books/1co.json'),
-  '2co': require('../data/books/2co.json'),
-  gl: require('../data/books/gl.json'),
-  ef: require('../data/books/ef.json'),
-  fp: require('../data/books/fp.json'),
-  cl: require('../data/books/cl.json'),
-  '1ts': require('../data/books/1ts.json'),
-  '2ts': require('../data/books/2ts.json'),
-  '1tm': require('../data/books/1tm.json'),
-  '2tm': require('../data/books/2tm.json'),
-  tt: require('../data/books/tt.json'),
-  fm: require('../data/books/fm.json'),
-  hb: require('../data/books/hb.json'),
-  tg: require('../data/books/tg.json'),
-  '1pe': require('../data/books/1pe.json'),
-  '2pe': require('../data/books/2pe.json'),
-  '1jo': require('../data/books/1jo.json'),
-  '2jo': require('../data/books/2jo.json'),
-  '3jo': require('../data/books/3jo.json'),
-  jd: require('../data/books/jd.json'),
-  ap: require('../data/books/ap.json'),
-};
 
 // Mapeamento de abreviações para nomes em português
 const BOOK_NAMES = {
@@ -154,27 +84,120 @@ const OLD_TESTAMENT_BOOKS = [
   'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml',
 ];
 
+// Funções lazy para carregar cada livro (só executa quando chamado)
+const LAZY_LOADERS = {
+  gn: () => require('../data/books/gn.json'),
+  ex: () => require('../data/books/ex.json'),
+  lv: () => require('../data/books/lv.json'),
+  nm: () => require('../data/books/nm.json'),
+  dt: () => require('../data/books/dt.json'),
+  js: () => require('../data/books/js.json'),
+  jz: () => require('../data/books/jz.json'),
+  rt: () => require('../data/books/rt.json'),
+  '1sm': () => require('../data/books/1sm.json'),
+  '2sm': () => require('../data/books/2sm.json'),
+  '1rs': () => require('../data/books/1rs.json'),
+  '2rs': () => require('../data/books/2rs.json'),
+  '1cr': () => require('../data/books/1cr.json'),
+  '2cr': () => require('../data/books/2cr.json'),
+  ed: () => require('../data/books/ed.json'),
+  ne: () => require('../data/books/ne.json'),
+  et: () => require('../data/books/et.json'),
+  job: () => require('../data/books/job.json'),
+  sl: () => require('../data/books/sl.json'),
+  pv: () => require('../data/books/pv.json'),
+  ec: () => require('../data/books/ec.json'),
+  ct: () => require('../data/books/ct.json'),
+  is: () => require('../data/books/is.json'),
+  jr: () => require('../data/books/jr.json'),
+  lm: () => require('../data/books/lm.json'),
+  ez: () => require('../data/books/ez.json'),
+  dn: () => require('../data/books/dn.json'),
+  os: () => require('../data/books/os.json'),
+  jl: () => require('../data/books/jl.json'),
+  am: () => require('../data/books/am.json'),
+  ob: () => require('../data/books/ob.json'),
+  jn: () => require('../data/books/jn.json'),
+  mq: () => require('../data/books/mq.json'),
+  na: () => require('../data/books/na.json'),
+  hc: () => require('../data/books/hc.json'),
+  sf: () => require('../data/books/sf.json'),
+  ag: () => require('../data/books/ag.json'),
+  zc: () => require('../data/books/zc.json'),
+  ml: () => require('../data/books/ml.json'),
+  mt: () => require('../data/books/mt.json'),
+  mc: () => require('../data/books/mc.json'),
+  lc: () => require('../data/books/lc.json'),
+  jo: () => require('../data/books/jo.json'),
+  at: () => require('../data/books/atos.json'),
+  rm: () => require('../data/books/rm.json'),
+  '1co': () => require('../data/books/1co.json'),
+  '2co': () => require('../data/books/2co.json'),
+  gl: () => require('../data/books/gl.json'),
+  ef: () => require('../data/books/ef.json'),
+  fp: () => require('../data/books/fp.json'),
+  cl: () => require('../data/books/cl.json'),
+  '1ts': () => require('../data/books/1ts.json'),
+  '2ts': () => require('../data/books/2ts.json'),
+  '1tm': () => require('../data/books/1tm.json'),
+  '2tm': () => require('../data/books/2tm.json'),
+  tt: () => require('../data/books/tt.json'),
+  fm: () => require('../data/books/fm.json'),
+  hb: () => require('../data/books/hb.json'),
+  tg: () => require('../data/books/tg.json'),
+  '1pe': () => require('../data/books/1pe.json'),
+  '2pe': () => require('../data/books/2pe.json'),
+  '1jo': () => require('../data/books/1jo.json'),
+  '2jo': () => require('../data/books/2jo.json'),
+  '3jo': () => require('../data/books/3jo.json'),
+  jd: () => require('../data/books/jd.json'),
+  ap: () => require('../data/books/ap.json'),
+};
+
+// Carregar índice (arquivo pequeno)
+const booksIndex = require('../data/books/index.json');
+
 class BibleService {
   constructor() {
-    // Processar metadados dos livros
-    this.booksMetadata = Object.keys(BOOKS_DATA).map(abbrev => {
-      const bookData = BOOKS_DATA[abbrev];
-      return {
-        abbrev,
-        name: BOOK_NAMES[abbrev] || abbrev.toUpperCase(),
-        testament: OLD_TESTAMENT_BOOKS.includes(abbrev) ? 'VT' : 'NT',
-        chapters: bookData.chapters ? bookData.chapters.length : 0,
-      };
-    });
+    // Cache de livros já carregados
+    this.loadedBooks = {};
 
-    console.log(`✅ BibleService iniciado: ${this.booksMetadata.length} livros carregados`);
+    // Processar metadados dos livros do índice
+    this.booksMetadata = booksIndex.map(book => ({
+      abbrev: book.abbrev,
+      name: BOOK_NAMES[book.abbrev] || book.abbrev.toUpperCase(),
+      testament: OLD_TESTAMENT_BOOKS.includes(book.abbrev) ? 'VT' : 'NT',
+      chapters: book.chapters,
+    }));
+
+    console.log(`✅ BibleService iniciado: ${this.booksMetadata.length} livros disponíveis`);
   }
 
   /**
-   * Obtém dados de um livro
+   * Carrega um livro sob demanda (lazy loading)
    */
-  getBookData(abbrev) {
-    return BOOKS_DATA[abbrev] || null;
+  loadBookData(abbrev) {
+    // Se já está no cache, retornar
+    if (this.loadedBooks[abbrev]) {
+      return this.loadedBooks[abbrev];
+    }
+
+    // Carregar usando a função lazy
+    const loader = LAZY_LOADERS[abbrev];
+    if (!loader) {
+      console.error(`Loader not found for book: ${abbrev}`);
+      return null;
+    }
+
+    try {
+      const bookData = loader();
+      this.loadedBooks[abbrev] = bookData;
+      console.log(`📖 Livro carregado: ${BOOK_NAMES[abbrev] || abbrev}`);
+      return bookData;
+    } catch (error) {
+      console.error(`Erro ao carregar livro ${abbrev}:`, error);
+      return null;
+    }
   }
 
   /**
@@ -207,9 +230,6 @@ class BibleService {
 
   /**
    * Busca capítulo de um livro (100% OFFLINE)
-   * @param {string} bookAbbrev - Abreviação do livro (ex: 'gn', 'mt')
-   * @param {number} chapter - Número do capítulo (começando em 1)
-   * @returns {Promise<Object>} Dados do capítulo com versículos
    */
   async getChapter(bookAbbrev, chapter) {
     try {
@@ -227,8 +247,8 @@ class BibleService {
         );
       }
 
-      // Buscar dados do livro
-      const bookData = this.getBookData(bookAbbrev);
+      // Carregar dados do livro (lazy)
+      const bookData = this.loadBookData(bookAbbrev);
 
       if (!bookData || !bookData.chapters) {
         throw new Error('Erro ao carregar dados do livro');
@@ -299,7 +319,7 @@ class BibleService {
 
       // Buscar em todos os livros
       for (const bookMeta of this.booksMetadata) {
-        const bookData = this.getBookData(bookMeta.abbrev);
+        const bookData = this.loadBookData(bookMeta.abbrev);
 
         if (!bookData || !bookData.chapters) continue;
 
@@ -347,7 +367,7 @@ class BibleService {
     this.booksMetadata.forEach(bookMeta => {
       totalChapters += bookMeta.chapters;
 
-      const bookData = this.getBookData(bookMeta.abbrev);
+      const bookData = this.loadBookData(bookMeta.abbrev);
       if (bookData && bookData.chapters) {
         bookData.chapters.forEach(chapter => {
           totalVerses += chapter.length;
@@ -362,6 +382,14 @@ class BibleService {
       totalChapters,
       totalVerses,
     };
+  }
+
+  /**
+   * Limpa o cache de livros carregados
+   */
+  clearCache() {
+    this.loadedBooks = {};
+    console.log('✅ Cache de livros limpo');
   }
 }
 
