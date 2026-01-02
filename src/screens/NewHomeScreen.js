@@ -53,6 +53,36 @@ const NewHomeScreen = ({ navigation }) => {
     }
   };
 
+  // Função para calcular progresso semanal real
+  const getWeekProgress = () => {
+    const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const today = new Date().getDay(); // 0 = Domingo, 6 = Sábado
+    const data = userStats || {};
+
+    // Criar array de 7 dias
+    return daysOfWeek.map((day, index) => {
+      let value = 0;
+
+      // Apenas o dia de hoje tem progresso se houve atividade
+      if (index === today && data.lastActivityDate) {
+        const lastActivity = new Date(data.lastActivityDate);
+        const todayDate = new Date();
+
+        // Verifica se a última atividade foi hoje
+        if (
+          lastActivity.getDate() === todayDate.getDate() &&
+          lastActivity.getMonth() === todayDate.getMonth() &&
+          lastActivity.getFullYear() === todayDate.getFullYear()
+        ) {
+          // Calcula progresso baseado em lições do dia (máximo 1.0)
+          value = Math.min((data.dailyLessons || 0) / 3, 1.0);
+        }
+      }
+
+      return { day, value };
+    });
+  };
+
   const handleModulePress = (moduleId) => {
     navigation.navigate('Módulos', {
       screen: 'ModuleDetail',
@@ -69,15 +99,7 @@ const NewHomeScreen = ({ navigation }) => {
   }
 
   const bookmarks = 3;
-  const weekProgress = [
-    { day: 'Seg', value: 0.6 },
-    { day: 'Ter', value: 0.8 },
-    { day: 'Qua', value: 0.5 },
-    { day: 'Qui', value: 0.9 },
-    { day: 'Sex', value: 0.7 },
-    { day: 'Sáb', value: 1.0 },
-    { day: 'Dom', value: 0.6 },
-  ];
+  const weekProgress = getWeekProgress();
 
   return (
     <View style={styles.container}>
