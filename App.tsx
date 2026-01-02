@@ -1,20 +1,53 @@
+console.log('🟢 App.tsx: Starting imports...');
+
 import React, { useState, useEffect } from 'react';
+console.log('🟢 App.tsx: React imported');
+
 import { NavigationContainer } from '@react-navigation/native';
+console.log('🟢 App.tsx: NavigationContainer imported');
+
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+console.log('🟢 App.tsx: createNativeStackNavigator imported');
+
 import { Provider as PaperProvider } from 'react-native-paper';
+console.log('🟢 App.tsx: PaperProvider imported');
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+console.log('🟢 App.tsx: SafeAreaProvider imported');
+
 import { StatusBar, View, ActivityIndicator } from 'react-native';
+console.log('🟢 App.tsx: React Native components imported');
 
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
+console.log('🟢 App.tsx: BottomTabNavigator imported');
+
 import ModuleDetailScreen from './src/screens/ModuleDetailScreen';
+console.log('🟢 App.tsx: ModuleDetailScreen imported');
+
 import LessonScreen from './src/screens/LessonScreen';
+console.log('🟢 App.tsx: LessonScreen imported');
+
 import StudyToolsScreen from './src/screens/StudyToolsScreen';
+console.log('🟢 App.tsx: StudyToolsScreen imported');
+
 import SermonPreparationScreen from './src/screens/SermonPreparationScreen';
+console.log('🟢 App.tsx: SermonPreparationScreen imported');
+
 import HistoricalContextScreen from './src/screens/HistoricalContextScreen';
+console.log('🟢 App.tsx: HistoricalContextScreen imported');
+
 import BiblicalDictionaryScreen from './src/screens/BiblicalDictionaryScreen';
+console.log('🟢 App.tsx: BiblicalDictionaryScreen imported');
+
 import LoginScreen from './src/screens/LoginScreen';
+console.log('🟢 App.tsx: LoginScreen imported');
+
 import AuthService from './src/services/AuthService';
+console.log('🟢 App.tsx: AuthService imported');
+
 import { paperTheme, colors } from './src/theme/colors';
+console.log('🟢 App.tsx: paperTheme and colors imported');
+console.log('✅ App.tsx: All imports completed successfully!');
 
 const Stack = createNativeStackNavigator();
 
