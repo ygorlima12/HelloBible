@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,6 +15,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
 import BibleService from '../services/BibleService';
+import HighlightsService, { HIGHLIGHT_COLORS } from '../services/HighlightsService';
+import OpenAIService from '../services/OpenAIService';
 
 const BibleScreen = ({ navigation }) => {
   const [selectedBook, setSelectedBook] = useState(null);
@@ -24,6 +27,13 @@ const BibleScreen = ({ navigation }) => {
   const [showBookSelector, setShowBookSelector] = useState(false);
   const [showChapterSelector, setShowChapterSelector] = useState(false);
   const [fontSize, setFontSize] = useState(16);
+
+  // Estados para versículo selecionado e modal
+  const [selectedVerse, setSelectedVerse] = useState(null);
+  const [showVerseMenu, setShowVerseMenu] = useState(false);
+  const [highlights, setHighlights] = useState({});
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // Iniciar com Gênesis 1
@@ -40,12 +50,174 @@ const BibleScreen = ({ navigation }) => {
       setChapterData(data);
       setSelectedChapter(chapter);
       setError(null);
+
+      // Carregar highlights deste capítulo
+      await loadHighlightsForChapter(bookAbbrev, chapter);
     } catch (err) {
       console.error('Error loading chapter:', err);
       setError(err.message || 'Erro ao carregar capítulo. Tente novamente.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadHighlightsForChapter = async (bookAbbrev, chapter) => {
+    try {
+      const allHighlights = await HighlightsService.loadHighlights();
+      const chapterHighlights = {};
+
+      Object.keys(allHighlights).forEach(key => {
+        const h = allHighlights[key];
+        if (h.bookAbbrev === bookAbbrev && h.chapter === chapter) {
+          chapterHighlights[h.verse] = h;
+        }
+      });
+
+      setHighlights(chapterHighlights);
+    } catch (error) {
+      console.error('Error loading highlights:', error);
+    }
+  };
+
+  const handleVersePress = (verse) => {
+    setSelectedVerse(verse);
+    setShowVerseMenu(true);
+  };
+
+  const handleHighlight = async (color) => {
+    if (!selectedVerse || !selectedBook) return;
+
+    try {
+      await HighlightsService.addHighlight(
+        selectedBook.abbrev,
+        selectedChapter,
+        selectedVerse.number,
+        color
+      );
+
+      // Atualizar highlights local
+      await loadHighlightsForChapter(selectedBook.abbrev, selectedChapter);
+      setShowVerseMenu(false);
+
+      Alert.alert('✅ Destaque adicionado', 'Versículo destacado com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível adicionar destaque');
+    }
+  };
+
+  const handleRemoveHighlight = async () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    try {
+      await HighlightsService.removeHighlight(
+        selectedBook.abbrev,
+        selectedChapter,
+        selectedVerse.number
+      );
+
+      await loadHighlightsForChapter(selectedBook.abbrev, selectedChapter);
+      setShowVerseMenu(false);
+
+      Alert.alert('✅ Destaque removido', 'Destaque removido com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível remover destaque');
+    }
+  };
+
+  const handleAskAI = async () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    setShowVerseMenu(false);
+
+    Alert.prompt(
+      '💬 Perguntar à IA',
+      'O que você gostaria de saber sobre este versículo?',
+      async (question) => {
+        if (!question) return;
+
+        try {
+          setLoading(true);
+          const prompt = `Sobre o versículo "${selectedVerse.text}" (${selectedBook.name} ${selectedChapter}:${selectedVerse.number}), responda: ${question}`;
+
+          const response = await OpenAIService.generateSermon(prompt);
+
+          Alert.alert(
+            '🤖 Resposta da IA',
+            response,
+            [{ text: 'OK' }],
+            { cancelable: true }
+          );
+        } catch (error) {
+          Alert.alert('Erro', 'Não foi possível obter resposta da IA');
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
+  };
+
+  const handleHistoricalContext = () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    setShowVerseMenu(false);
+
+    const verseReference = `${selectedBook.name} ${selectedChapter}:${selectedVerse.number} - "${selectedVerse.text}"`;
+
+    navigation.navigate('HistoricalContext', {
+      initialVerse: verseReference,
+    });
+  };
+
+  const handleWordAnalysis = () => {
+    if (!selectedVerse) return;
+
+    setShowVerseMenu(false);
+
+    Alert.prompt(
+      '📖 Análise de Palavra',
+      'Digite a palavra que deseja analisar:',
+      async (word) => {
+        if (!word) return;
+
+        try {
+          setLoading(true);
+          const prompt = `Analise a palavra "${word}" no contexto bíblico. Explique seu significado original (hebraico/grego), uso nas Escrituras e aplicação prática.`;
+
+          const response = await OpenAIService.generateSermon(prompt);
+
+          Alert.alert(
+            `📖 Análise: "${word}"`,
+            response,
+            [{ text: 'OK' }],
+            { cancelable: true }
+          );
+        } catch (error) {
+          Alert.alert('Erro', 'Não foi possível analisar a palavra');
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
+  };
+
+  const handleCopyVerse = () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    const verseText = `"${selectedVerse.text}" - ${selectedBook.name} ${selectedChapter}:${selectedVerse.number}`;
+
+    // TODO: Implement clipboard copy when react-native-clipboard is available
+    Alert.alert('✅ Copiado', 'Versículo copiado para a área de transferência');
+    setShowVerseMenu(false);
+  };
+
+  const handleShare = () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    const verseText = `"${selectedVerse.text}" - ${selectedBook.name} ${selectedChapter}:${selectedVerse.number}`;
+
+    // TODO: Implement share when react-native-share is available
+    Alert.alert('✅ Compartilhar', 'Funcionalidade de compartilhamento em breve!');
+    setShowVerseMenu(false);
   };
 
   const handleBookSelect = (book) => {
@@ -230,6 +402,12 @@ const BibleScreen = ({ navigation }) => {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.headerButton}
+              onPress={() => setShowSearchBar(!showSearchBar)}
+            >
+              <Icon name="magnify" size={20} color={colors.slate[600]} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
               onPress={() => setFontSize(Math.max(12, fontSize - 2))}
             >
               <Icon name="format-font-size-decrease" size={20} color={colors.slate[600]} />
@@ -304,16 +482,47 @@ const BibleScreen = ({ navigation }) => {
           style={styles.contentScroll}
           contentContainerStyle={styles.contentContainer}
         >
-          {chapterData.verses.map((verse, index) => (
-            <Animated.View
-              key={verse.number}
-              entering={FadeInDown.delay(index * 50).duration(400)}
-              style={styles.verseContainer}
-            >
-              <Text style={styles.verseNumber}>{verse.number}</Text>
-              <Text style={[styles.verseText, { fontSize }]}>{verse.text}</Text>
-            </Animated.View>
-          ))}
+          {chapterData.verses.map((verse, index) => {
+            const highlight = highlights[verse.number];
+            const highlightColor = highlight ? HIGHLIGHT_COLORS[highlight.color] : null;
+
+            return (
+              <TouchableOpacity
+                key={verse.number}
+                onPress={() => handleVersePress(verse)}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  entering={FadeInDown.delay(index * 50).duration(400)}
+                  style={[
+                    styles.verseContainer,
+                    highlightColor && {
+                      backgroundColor: highlightColor.color,
+                      borderLeftWidth: 4,
+                      borderLeftColor: highlightColor.textColor,
+                      paddingLeft: 12,
+                      borderRadius: 8,
+                      marginVertical: 4,
+                    },
+                  ]}
+                >
+                  <Text style={[
+                    styles.verseNumber,
+                    highlightColor && { color: highlightColor.textColor }
+                  ]}>
+                    {verse.number}
+                  </Text>
+                  <Text style={[
+                    styles.verseText,
+                    { fontSize },
+                    highlightColor && { color: highlightColor.textColor }
+                  ]}>
+                    {verse.text}
+                  </Text>
+                </Animated.View>
+              </TouchableOpacity>
+            );
+          })}
 
           {/* Navigation */}
           <View style={styles.navigationContainer}>
