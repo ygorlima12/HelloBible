@@ -390,6 +390,177 @@ const BibleScreen = ({ navigation }) => {
     );
   };
 
+  const handleAddNote = () => {
+    if (!selectedVerse || !selectedBook) return;
+
+    setShowVerseMenu(false);
+
+    Alert.prompt(
+      '📝 Adicionar Anotação',
+      `${selectedBook.name} ${selectedChapter}:${selectedVerse.number}`,
+      async (note) => {
+        if (!note) return;
+
+        try {
+          // Primeiro garante que o versículo está destacado (amarelo por padrão)
+          const currentHighlight = highlights[selectedVerse.number];
+          const color = currentHighlight ? currentHighlight.color : 'yellow';
+
+          await HighlightsService.addHighlight(
+            selectedBook.abbrev,
+            selectedChapter,
+            selectedVerse.number,
+            color,
+            note
+          );
+
+          await loadHighlightsForChapter(selectedBook.abbrev, selectedChapter);
+          Alert.alert('✅ Anotação salva', 'Sua anotação foi salva com sucesso!');
+        } catch (error) {
+          Alert.alert('Erro', 'Não foi possível salvar a anotação');
+        }
+      }
+    );
+  };
+
+  const renderVerseMenu = () => {
+    if (!selectedVerse || !selectedBook) return null;
+
+    const currentHighlight = highlights[selectedVerse.number];
+    const colorOptions = Object.keys(HIGHLIGHT_COLORS);
+    const hasNote = currentHighlight?.note && currentHighlight.note.trim().length > 0;
+
+    return (
+      <Modal
+        visible={showVerseMenu}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowVerseMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.verseMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowVerseMenu(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.verseMenuContainer}>
+              {/* Handle bar */}
+              <View style={styles.verseMenuHandle} />
+
+              {/* Verse reference */}
+              <View style={styles.verseMenuHeader}>
+                <Text style={styles.verseMenuReference}>
+                  {selectedBook.name} {selectedChapter}:{selectedVerse.number}
+                </Text>
+                <Text style={styles.verseMenuText} numberOfLines={2}>
+                  {selectedVerse.text}
+                </Text>
+                {hasNote && (
+                  <View style={styles.notePreview}>
+                    <Icon name="note-text" size={14} color={colors.primary[600]} />
+                    <Text style={styles.notePreviewText} numberOfLines={2}>
+                      {currentHighlight.note}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Color selection */}
+              <View style={styles.verseMenuSection}>
+                <Text style={styles.verseMenuSectionTitle}>Destacar com cor:</Text>
+                <View style={styles.colorOptionsContainer}>
+                  {colorOptions.map(colorKey => {
+                    const colorData = HIGHLIGHT_COLORS[colorKey];
+                    return (
+                      <TouchableOpacity
+                        key={colorKey}
+                        style={[
+                          styles.colorOption,
+                          { backgroundColor: colorData.color },
+                          currentHighlight?.color === colorKey && styles.colorOptionSelected,
+                        ]}
+                        onPress={() => handleHighlight(colorKey)}
+                      >
+                        {currentHighlight?.color === colorKey && (
+                          <Icon name="check" size={16} color={colorData.textColor} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Action buttons */}
+              <View style={styles.verseMenuActions}>
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleAddNote}
+                >
+                  <Icon name="note-text-outline" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Anotação</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleAskAI}
+                >
+                  <Icon name="robot-outline" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Perguntar IA</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleHistoricalContext}
+                >
+                  <Icon name="clock-outline" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Contexto</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleWordAnalysis}
+                >
+                  <Icon name="book-alphabet" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Palavra</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleCopyVerse}
+                >
+                  <Icon name="content-copy" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Copiar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verseMenuButton}
+                  onPress={handleShare}
+                >
+                  <Icon name="share-variant" size={20} color={colors.slate[700]} />
+                  <Text style={styles.verseMenuButtonText}>Compartilhar</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Remove highlight button if verse is already highlighted */}
+              {currentHighlight && (
+                <TouchableOpacity
+                  style={styles.removeHighlightButton}
+                  onPress={handleRemoveHighlight}
+                >
+                  <Icon name="eraser" size={18} color={colors.red[600]} />
+                  <Text style={styles.removeHighlightText}>Remover Destaque</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -485,6 +656,7 @@ const BibleScreen = ({ navigation }) => {
           {chapterData.verses.map((verse, index) => {
             const highlight = highlights[verse.number];
             const highlightColor = highlight ? HIGHLIGHT_COLORS[highlight.color] : null;
+            const hasNote = highlight?.note && highlight.note.trim().length > 0;
 
             return (
               <TouchableOpacity
@@ -512,13 +684,23 @@ const BibleScreen = ({ navigation }) => {
                   ]}>
                     {verse.number}
                   </Text>
-                  <Text style={[
-                    styles.verseText,
-                    { fontSize },
-                    highlightColor && { color: highlightColor.textColor }
-                  ]}>
-                    {verse.text}
-                  </Text>
+                  <View style={styles.verseTextContainer}>
+                    <Text style={[
+                      styles.verseText,
+                      { fontSize },
+                      highlightColor && { color: highlightColor.textColor }
+                    ]}>
+                      {verse.text}
+                    </Text>
+                    {hasNote && (
+                      <Icon
+                        name="note-text"
+                        size={16}
+                        color={highlightColor ? highlightColor.textColor : colors.primary[600]}
+                        style={styles.noteIcon}
+                      />
+                    )}
+                  </View>
                 </Animated.View>
               </TouchableOpacity>
             );
@@ -547,6 +729,7 @@ const BibleScreen = ({ navigation }) => {
 
       {renderBookSelector()}
       {renderChapterSelector()}
+      {renderVerseMenu()}
     </View>
   );
 };
@@ -628,11 +811,20 @@ const styles = StyleSheet.create({
     color: colors.primary[600],
     marginTop: 2,
   },
+  verseTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
   verseText: {
     flex: 1,
     fontSize: 16,
     color: colors.slate[800],
     lineHeight: 24,
+  },
+  noteIcon: {
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,
@@ -804,6 +996,134 @@ const styles = StyleSheet.create({
   },
   chapterChipTextSelected: {
     color: colors.white,
+  },
+  verseMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  verseMenuContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 32,
+  },
+  verseMenuHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.slate[300],
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  verseMenuHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.slate[200],
+  },
+  verseMenuReference: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.primary[700],
+    marginBottom: 8,
+  },
+  verseMenuText: {
+    fontSize: 14,
+    color: colors.slate[700],
+    lineHeight: 20,
+  },
+  notePreview: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary[600],
+  },
+  notePreviewText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.primary[800],
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  verseMenuSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.slate[200],
+  },
+  verseMenuSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.slate[600],
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  colorOptionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  colorOption: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorOptionSelected: {
+    borderColor: colors.primary[600],
+    borderWidth: 3,
+  },
+  verseMenuActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    gap: 12,
+  },
+  verseMenuButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.slate[100],
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.slate[200],
+  },
+  verseMenuButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.slate[700],
+  },
+  removeHighlightButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: colors.red[50],
+    borderWidth: 1,
+    borderColor: colors.red[200],
+  },
+  removeHighlightText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.red[600],
   },
 });
 
