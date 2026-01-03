@@ -1,0 +1,26 @@
+/**
+ * supabaseClient.js - VERSÃO EXPO
+ * Cliente Supabase configurado para React Native Expo
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-url-polyfill/auto';
+
+// ==========================================
+// CONFIGURE SUAS CREDENCIAIS AQUI
+// ==========================================
+const SUPABASE_URL = 'https://ewhdexsrsdbawjutheat.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aGRleHNyc2RiYXdqdXRoZWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMDM2NDcsImV4cCI6MjA4Mjg3OTY0N30.xUambhyHJNywrxRLwwXAk3Y7MKm9508A3pK0rcGnxqI';
+
+// Criar cliente Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
+
+export default supabase;
