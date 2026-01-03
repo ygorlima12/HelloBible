@@ -8,28 +8,52 @@ import 'react-native-url-polyfill/auto';
 // 3. Vá em Settings > API
 // 4. Copie a URL e a anon key
 
-const SUPABASE_URL = 'https://seu-projeto.supabase.co'; // Substitua pela URL do seu projeto
-const SUPABASE_ANON_KEY = 'sua-anon-key-aqui'; // Substitua pela sua anon key
+const SUPABASE_URL = 'https://ewhdexsrsdbawjutheat.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aGRleHNyc2RiYXdqdXRoZWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczMDM2NDcsImV4cCI6MjA4Mjg3OTY0N30.xUambhyHJNywrxRLwwXAk3Y7MKm9508A3pK0rcGnxqI';
 
-// Configuração do cliente Supabase para React Native
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-  realtime: {
-    // Desabilitar realtime para evitar problemas de compatibilidade
-    params: {
-      eventsPerSecond: 10,
+// Configuração do cliente Supabase para React Native com tratamento de erro
+let supabaseClient;
+
+try {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      storage: AsyncStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
     },
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'supabase-js-react-native',
+    realtime: {
+      // Desabilitar realtime para evitar problemas de compatibilidade
+      params: {
+        eventsPerSecond: 10,
+      },
     },
-  },
-});
+    global: {
+      headers: {
+        'X-Client-Info': 'supabase-js-react-native',
+      },
+    },
+  });
+  console.log('✅ Supabase client initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing Supabase client:', error);
+  console.error('Stack:', error.stack);
+  // Criar um cliente mock para evitar crashes
+  supabaseClient = {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      getUser: async () => ({ data: { user: null }, error: null }),
+      signInWithPassword: async () => ({ data: null, error: new Error('Supabase not initialized') }),
+      signUp: async () => ({ data: null, error: new Error('Supabase not initialized') }),
+      signOut: async () => ({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+      insert: async () => ({ data: null, error: null }),
+      update: () => ({ eq: () => ({ select: () => ({ single: async () => ({ data: null, error: null }) }) }) }),
+    }),
+  };
+}
 
 export default supabaseClient;
