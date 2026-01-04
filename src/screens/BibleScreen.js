@@ -396,6 +396,9 @@ const BibleScreen = () => {
                 }}
               >
                 <Text style={styles.verseNumber}>{verse.verse}</Text>
+
+                <Text style={styles.verseText}>{verse.text}</Text>
+
                 <View style={styles.verseContent}>
                   <Text style={styles.verseText}>{verse.text}</Text>
                   <View style={styles.verseActionRow}>
@@ -411,6 +414,7 @@ const BibleScreen = () => {
                   </View>
                 </View>
                 <Icon name="dots-vertical" size={20} color="#94a3b8" />
+
               </TouchableOpacity>
             );
           })}
