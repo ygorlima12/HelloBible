@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,11 +15,22 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
 import OpenAIService from '../services/OpenAIService';
 
-const BiblicalDictionaryScreen = ({ navigation }) => {
+const BiblicalDictionaryScreen = ({ navigation, route }) => {
   const [word, setWord] = useState('');
   const [verseContext, setVerseContext] = useState('');
   const [definition, setDefinition] = useState(null);
   const [loading, setLoading] = useState(false);
+  const initialWord = route?.params?.initialWord;
+  const initialVerseContext = route?.params?.initialVerseContext;
+
+  useEffect(() => {
+    if (initialWord) {
+      setWord(initialWord);
+    }
+    if (initialVerseContext) {
+      setVerseContext(initialVerseContext);
+    }
+  }, [initialWord, initialVerseContext]);
 
   const handleSearch = async () => {
     if (!word.trim()) {

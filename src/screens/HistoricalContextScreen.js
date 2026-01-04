@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,10 +15,17 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors } from '../theme/colors';
 import OpenAIService from '../services/OpenAIService';
 
-const HistoricalContextScreen = ({ navigation }) => {
+const HistoricalContextScreen = ({ navigation, route }) => {
   const [verse, setVerse] = useState('');
   const [context, setContext] = useState(null);
   const [loading, setLoading] = useState(false);
+  const initialVerse = route?.params?.initialVerse;
+
+  useEffect(() => {
+    if (initialVerse) {
+      setVerse(initialVerse);
+    }
+  }, [initialVerse]);
 
   const handleGenerate = async () => {
     if (!verse.trim()) {
