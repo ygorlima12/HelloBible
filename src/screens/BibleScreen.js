@@ -396,7 +396,25 @@ const BibleScreen = () => {
                 }}
               >
                 <Text style={styles.verseNumber}>{verse.verse}</Text>
+
                 <Text style={styles.verseText}>{verse.text}</Text>
+
+                <View style={styles.verseContent}>
+                  <Text style={styles.verseText}>{verse.text}</Text>
+                  <View style={styles.verseActionRow}>
+                    <View style={styles.tagChip}>
+                      <Icon name="gesture-tap" size={14} color="#6366f1" />
+                      <Text style={styles.tagChipText}>Ações</Text>
+                    </View>
+                    {highlightColor ? (
+                      <View style={[styles.highlightTag, { backgroundColor: highlightColor }]}>
+                        <Text style={styles.highlightTagText}>Destaque</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+                <Icon name="dots-vertical" size={20} color="#94a3b8" />
+
               </TouchableOpacity>
             );
           })}
@@ -704,11 +722,44 @@ const styles = StyleSheet.create({
     width: 36,
     textAlign: 'right',
   },
+  verseContent: {
+    flex: 1,
+    gap: 8,
+  },
   verseText: {
     flex: 1,
     fontSize: 17,
     lineHeight: 26,
     color: '#1e293b',
+  },
+  verseActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  tagChipText: {
+    color: '#4338ca',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  highlightTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  highlightTagText: {
+    color: '#0f172a',
+    fontWeight: '700',
+    fontSize: 12,
   },
   loadingContainer: {
     flex: 1,
